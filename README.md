@@ -1,5 +1,12 @@
 # Overlay Desk
 
+[![Release](https://img.shields.io/github/v/release/felipeAguiarCode/overlay-desk?style=flat-square&label=release&color=2ea44f)](https://github.com/felipeAguiarCode/overlay-desk/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/felipeAguiarCode/overlay-desk/total?style=flat-square&label=downloads&color=555)](https://github.com/felipeAguiarCode/overlay-desk/releases)
+[![Plataforma](https://img.shields.io/badge/plataforma-Windows%2010%201903%2B-0078D6?style=flat-square)](#download)
+[![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C?style=flat-square)](CMakeLists.txt)
+[![Direct3D 11](https://img.shields.io/badge/Direct3D-11-5C2D91?style=flat-square)](docs/adr/ADR-0001-technology-stack.md)
+[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue?style=flat-square)](LICENSE)
+
 Uma camada visual que fica por cima de um emulador (ou de qualquer janela) e aplica filtros de
 CRT, distorção, aberração cromática e glitch em tempo real, na GPU.
 
