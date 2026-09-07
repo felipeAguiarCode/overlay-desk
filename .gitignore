@@ -1,0 +1,13 @@
+build/
+build-ninja/
+out/
+.vs/
+.cache/
+*.user
+*.suo
+*.aps
+CMakeUserPresets.json
+
+# Personal Claude Code overrides. .claude/settings.json IS committed - it carries the
+# project's shared permission allowlist.
+.claude/settings.local.json

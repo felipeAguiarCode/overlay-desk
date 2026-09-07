@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "overlay": {
+    "enabled": true,
+    "x": 320,
+    "y": 180,
+    "width": 1280,
+    "height": 720,
+    "resizable": true,
+    "lockPosition": false,
+    "lockSize": false,
+    "lockAspectRatio": true,
+    "aspectRatio": "16:9",
+    "alwaysOnTop": true,
+    "clickThrough": true,
+    "opacity": 1.0,
+    "fullscreen": false,
+    "monitorIndex": 0
+  },
+  "filters": {
+    "distortion": {
+      "enabled": false,
+      "intensity": 1.0,
+      "amount": 0.0,
+      "shape": "radial"
+    },
+    "scope": {
+      "enabled": false,
+      "intensity": 1.0,
+      "size": 0.62,
+      "softness": 0.05,
+      "magnification": 1.0,
+      "reticle": 0.0,
+      "shape": "circle"
+    },
+    "vignette": {
+      "enabled": false,
+      "intensity": 0.35,
+      "size": 0.7,
+      "softness": 0.75,
+      "roundness": 0.3
+    },
+    "scanlines": {
+      "enabled": false,
+      "intensity": 0.25,
+      "thickness": 1.0,
+      "spacing": 2.0,
+      "style": "hard",
+      "orientation": "horizontal",
+      "scaleMode": "pixelPerfect",
+      "beamWidth": 0.0,
+      "interlace": 0.0
+    },
+    "chromaticAberration": {
+      "enabled": false,
+      "intensity": 0.1,
+      "mode": "radial",
+      "edgeBias": 0.7,
+      "redShift": 1.0,
+      "blueShift": -1.0
+    },
+    "colorCorrection": {
+      "enabled": false,
+      "intensity": 1.0,
+      "brightness": 0.0,
+      "contrast": 1.0,
+      "saturation": 1.0,
+      "gamma": 1.0,
+      "tintR": 1.0,
+      "tintG": 1.0,
+      "tintB": 1.0,
+      "tintAmount": 0.0,
+      "posterize": 0.0
+    },
+    "bloom": {
+      "enabled": false,
+      "intensity": 0.35,
+      "threshold": 0.75,
+      "radius": 0.35,
+      "tintR": 1.0,
+      "tintG": 1.0,
+      "tintB": 1.0
+    },
+    "falseColour": {
+      "enabled": false,
+      "intensity": 1.0,
+      "palette": "whiteHot",
+      "levels": 0.0
+    },
+    "edgeGlow": {
+      "enabled": false,
+      "intensity": 0.45,
+      "width": 0.5,
+      "tintR": 0.35,
+      "tintG": 0.8,
+      "tintB": 1.0
+    },
+    "lensSoftness": {
+      "enabled": false,
+      "intensity": 0.4,
+      "center": 0.45
+    },
+    "lensDirt": {
+      "enabled": false,
+      "intensity": 0.25,
+      "density": 0.5,
+      "smear": 0.4
+    }
+  },
+  "effects": {
+    "glitch": {
+      "enabled": false,
+      "intensity": 0.15,
+      "frequency": 0.05,
+      "blockSize": 0.1,
+      "jitter": 0.05,
+      "rgbShift": 0.1,
+      "style": "analog"
+    },
+    "noise": {
+      "enabled": false,
+      "intensity": 0.12,
+      "grainSize": 0.5,
+      "speed": 0.6,
+      "colorAmount": 0.0
+    },
+    "flicker": {
+      "enabled": false,
+      "intensity": 0.15,
+      "speed": 0.5
+    },
+    "jitter": {
+      "enabled": false,
+      "intensity": 0.1,
+      "speed": 0.5
+    },
+    "shimmer": {
+      "enabled": false,
+      "intensity": 0.2,
+      "speed": 0.5,
+      "scale": 0.5
+    },
+    "rollingShutter": {
+      "enabled": false,
+      "intensity": 0.15,
+      "speed": 0.5
+    },
+    "scanSweep": {
+      "enabled": false,
+      "intensity": 0.3,
+      "speed": 0.4,
+      "width": 0.15
+    }
+  },
+  "render": {
+    "fpsMode": "matchSource",
+    "fpsCap": 60,
+    "pauseWhenSourceMinimized": true
+  },
+  "ui": {
+    "logLevel": "info",
+    "activeTab": 0,
+    "controlWindowWidth": 960,
+    "controlWindowHeight": 640,
+    "showAdvanced": false,
+    "restoreLastTarget": false,
+    "lastTargetTitle": "",
+    "lastTargetExecutable": "",
+    "activePreset": "",
+    "seededPresets": []
+  },
+  "hotkeys": {
+    "enabled": true,
+    "bindings": {
+      "toggleEditMode": { "modifiers": ["ctrl", "shift"], "key": "O" },
+      "toggleEditModeAlt": { "modifiers": ["ctrl", "shift"], "key": "0" },
+      "toggleOverlay": { "modifiers": ["ctrl", "shift"], "key": "H" },
+      "toggleClickThrough": { "modifiers": ["ctrl", "shift"], "key": "C" },
+      "toggleAlwaysOnTop": { "modifiers": ["ctrl", "shift"], "key": "T" },
+      "toggleFullscreen": { "modifiers": ["ctrl", "shift"], "key": "F" },
+      "matchTargetWindow": { "modifiers": ["ctrl", "shift"], "key": "M" },
+      "nextPreset": { "modifiers": ["ctrl", "shift"], "key": "Right" },
+      "previousPreset": { "modifiers": ["ctrl", "shift"], "key": "Left" },
+      "showControlPanel": { "modifiers": ["ctrl", "shift"], "key": "P" }
+    }
+  }
+}

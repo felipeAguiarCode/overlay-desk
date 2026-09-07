@@ -1,0 +1,20 @@
+# Normalize to LF in the repository; Git checks out whatever the platform wants.
+* text=auto
+
+*.cpp    text
+*.h      text
+*.hlsl   text
+*.hlsli  text
+*.cmake  text
+*.json   text
+*.md     text
+*.txt    text
+*.in     text
+*.manifest text
+
+# Batch and PowerShell want CRLF on disk.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+*.ico binary

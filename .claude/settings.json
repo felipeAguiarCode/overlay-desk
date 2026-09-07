@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git remote*)",
+      "Bash(git rev-parse*)",
+      "Bash(git rev-list*)",
+      "Bash(git ls-files*)",
+
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(head*)",
+      "Bash(tail*)",
+      "Bash(wc*)",
+      "Bash(find*)",
+      "Bash(grep*)",
+      "Bash(sed -n*)",
+      "Bash(md5sum*)",
+      "Bash(sha256sum*)",
+
+      "PowerShell(Test-Path*)",
+      "PowerShell(Get-ChildItem*)",
+      "PowerShell(Get-Content*)",
+      "PowerShell(Get-Command*)",
+      "PowerShell(Get-Process*)",
+      "PowerShell(Get-Item*)",
+      "PowerShell(Select-String*)",
+
+      "PowerShell(.\\scripts\\build.ps1*)",
+      "PowerShell(& .\\scripts\\build.ps1*)",
+      "PowerShell(ctest*)"
+    ]
+  }
+}
