@@ -94,6 +94,12 @@ Quando ligado, input de mouse deve passar para a janela abaixo.
 
 Teclado não deve ser capturado pelo overlay durante Play Mode.
 
+Exceção transitória: enquanto o menu rápido está aberto (ADR-0012), o click-through e o
+`WS_EX_NOACTIVATE` ficam suspensos, porque um menu que não se pode clicar não é um menu. Os
+dois voltam ao que as settings dizem assim que o menu fecha. Fora desse intervalo a regra
+acima vale sem ressalva — em Play Mode o overlay não vê tecla nenhuma, e é por isso que o
+menu rápido também é alcançável por um atalho global.
+
 ## Opacidade
 
 Controla composição global da janela.

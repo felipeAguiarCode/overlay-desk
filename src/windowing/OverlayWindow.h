@@ -17,6 +17,15 @@
 
 namespace overlaydesk {
 
+// What the user picked from the overlay's quick menu. `None` covers both dismissal and a
+// menu that could not be shown at all.
+enum class QuickMenuCommand {
+    None = 0,
+    ShowControlPanel,
+    StopOverlay,
+    Quit,
+};
+
 class OverlayWindow {
 public:
     struct Callbacks {
@@ -28,7 +37,8 @@ public:
         // animation, a DPI change, a settings tweak.
         std::function<void()> onRedrawNeeded;
         // Escape pressed while the overlay has focus, which in practice means Edit Mode -
-        // Play Mode carries WS_EX_NOACTIVATE and never sees a keystroke.
+        // Play Mode carries WS_EX_NOACTIVATE and never sees a keystroke, so the quick menu
+        // is also reachable through a global shortcut.
         std::function<void()> onEscape;
     };
 
@@ -66,6 +76,13 @@ public:
     // Border thickness in physical pixels for the current DPI, handed to the shader.
     float EditBorderThickness() const noexcept;
 
+    // ADR-0012. Shows the native quick menu centred on the overlay and blocks until the user
+    // chooses or dismisses it. Play Mode's click-through and no-activate bits are suspended
+    // for the duration and restored before returning, so a menu the user can actually click
+    // never leaves the overlay stealing input afterwards.
+    QuickMenuCommand ShowQuickMenu();
+    bool IsQuickMenuOpen() const noexcept { return m_quickMenuOpen; }
+
 private:
     static LRESULT CALLBACK WindowProcThunk(HWND window, UINT message, WPARAM wParam,
                                             LPARAM lParam);
@@ -76,6 +93,10 @@ private:
     void UpdateStyles();
     void ApplyGeometry();
     void StoreGeometryFromWindow();
+
+    // Guards against a second menu being opened from inside the first one's modal loop -
+    // Escape and the shortcut can both arrive while it is up.
+    bool m_quickMenuOpen = false;
 
     HWND m_window = nullptr;
     HINSTANCE m_instance = nullptr;

@@ -9,8 +9,9 @@ processa na GPU e desenha o resultado numa janela própria e independente.
 Windows 10 1903+ · GPU com Direct3D 11 · zip de ~800 KB · sem instalador e sem Visual C++
 Redistributable.
 
-Versão 0.1.0: todas as features do MVP estão implementadas e os testes passam. A única
-pendência é fechar a corrida de 60 minutos do teste de estabilidade (`docs/planning/BACKLOG.md`).
+Versão 1.0.0: todas as features do MVP estão implementadas e os testes automatizados passam.
+A corrida de 60 minutos do teste de estabilidade ainda não foi fechada — acompanhe em
+`docs/planning/BACKLOG.md`.
 
 ## Download
 
@@ -31,6 +32,10 @@ agarrar para movê-lo. Para mexer nele, entre no **Edit Mode** (`Ctrl`+`Shift`+`
 com 8 alças, arraste o meio para mover e as alças para redimensionar — ou simplesmente desligue
 o `Click-through` na aba Overlay.
 
+**`Ctrl`+`Shift`+`Q`** abre um menu rápido no meio do overlay, com `Control panel`,
+`Stop overlay` e `Quit`. Com o overlay em foco, `Esc` faz o mesmo — durante o jogo o `Esc` é do
+jogo, e o Overlay Desk não o intercepta.
+
 ## Atalhos
 
 Globais: funcionam com o jogo em foco. Reconfiguráveis na aba **Hotkeys**.
@@ -46,7 +51,8 @@ Globais: funcionam com o jogo em foco. Reconfiguráveis na aba **Hotkeys**.
 | `Ctrl`+`Shift`+`M` | Encaixa o overlay na janela capturada |
 | `Ctrl`+`Shift`+`→` / `←` | Próximo / anterior preset |
 | `Ctrl`+`Shift`+`P` | Traz o painel de controle para a frente |
-| `Esc` `Esc` | Fecha o overlay e devolve o painel — duas vezes em menos de meio segundo, e este é fixo |
+| `Ctrl`+`Shift`+`Q` | Abre o menu rápido do overlay |
+| `Esc` | O mesmo menu, quando o overlay tem foco (Edit Mode ou click-through desligado) |
 
 Se a aba Overlay disser `shortcut unavailable`, outro programa registrou a combinação antes —
 troque-a na aba Hotkeys; os botões do painel continuam funcionando.

@@ -118,9 +118,14 @@ Verificado com teclas reais — `WM_NCHITTEST` no centro do overlay vai de `HTTR
 | Arrastar o meio do overlay | A janela se move (`WM_NCHITTEST` → `HTCAPTION`) |
 | Arrastar um canto | A janela redimensiona (`HTBOTTOMRIGHT` etc.) |
 | Sair do Edit Mode | Borda some e o click-through do Play Mode é restaurado |
-| `Esc` duas vezes em menos de 600 ms | Overlay fecha e o painel volta ao topo, na aba Overlay |
-| `Esc` uma vez só | Nada acontece |
-| `Esc` duas vezes com o cursor num campo de texto do painel | Nada acontece (o `Esc` cancela o campo) |
+| `Esc` uma vez, em Edit Mode | Abre o menu rápido no centro do overlay: `Control panel`, `Stop overlay`, separador, `Quit` (ADR-0012) |
+| `Esc` de novo, ou clique fora do menu | Menu fecha sem executar nada, e o click-through do Play Mode volta |
+| `Esc` com o cursor num campo de texto do painel | Nada acontece (o `Esc` cancela o campo) |
+| `Ctrl`+`Shift`+`Q` com o jogo em foco | O mesmo menu abre, e é clicável mesmo com o overlay em click-through |
+| `Control panel` no menu | Painel vem para a frente; o overlay continua rodando |
+| `Stop overlay` no menu | Overlay fecha e o painel volta ao topo, na aba Overlay |
+| `Quit` no menu | O Overlay Desk encerra |
+| Depois de qualquer item, checar `WS_EX_TRANSPARENT` | De volta ao que a aba Overlay diz — a suspensão do click-through não pode vazar |
 
 A borda também aparece sobre uma **fonte estática** (um emulador pausado), porque o
 repaint reusa a view do último frame — ver ADR-0006 item 6.

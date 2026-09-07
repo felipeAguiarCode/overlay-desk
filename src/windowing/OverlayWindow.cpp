@@ -21,6 +21,12 @@ constexpr int kMinimumExtentDip = 64;
 
 bool g_classRegistered = false;
 
+// Quick-menu command ids. Local to TrackPopupMenu's TPM_RETURNCMD, which hands the id straight
+// back rather than posting WM_COMMAND, so they never collide with anything else.
+constexpr UINT kQuickMenuControlPanel = 1;
+constexpr UINT kQuickMenuStopOverlay = 2;
+constexpr UINT kQuickMenuQuit = 3;
+
 }  // namespace
 
 void OverlayWindow::Create(HINSTANCE instance, OverlaySettings& settings, Callbacks callbacks) {
@@ -103,6 +109,63 @@ RECT OverlayWindow::Bounds() const noexcept {
 
 float OverlayWindow::EditBorderThickness() const noexcept {
     return static_cast<float>(ScaleForDpi(kEditBorderDip, m_dpi));
+}
+
+// ADR-0012. A native menu rather than something drawn into the swap chain: it costs nothing
+// per frame, and Windows already handles DPI, keyboard navigation and dismissal on click-away.
+QuickMenuCommand OverlayWindow::ShowQuickMenu() {
+    if (m_window == nullptr || !m_visible || m_quickMenuOpen) {
+        return QuickMenuCommand::None;
+    }
+
+    HMENU menu = ::CreatePopupMenu();
+    if (menu == nullptr) {
+        LogWarn("Quick menu: CreatePopupMenu failed; nothing shown.");
+        return QuickMenuCommand::None;
+    }
+
+    ::AppendMenuW(menu, MF_STRING, kQuickMenuControlPanel, L"Control panel");
+    ::AppendMenuW(menu, MF_STRING, kQuickMenuStopOverlay, L"Stop overlay");
+    ::AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+    ::AppendMenuW(menu, MF_STRING, kQuickMenuQuit, L"Quit");
+
+    // The menu has to be clickable, so Play Mode's click-through and no-activate bits come off
+    // for as long as it is up. UpdateStyles puts back whatever the settings actually say.
+    m_quickMenuOpen = true;
+    LONG_PTR exStyle = ::GetWindowLongPtrW(m_window, GWL_EXSTYLE);
+    ::SetWindowLongPtrW(m_window, GWL_EXSTYLE,
+                        exStyle & ~static_cast<LONG_PTR>(WS_EX_TRANSPARENT | WS_EX_NOACTIVATE));
+
+    // Without foreground the menu would not close when the user clicks elsewhere. A process
+    // that is handling a hotkey is allowed to take it, which is the case that matters here.
+    ::SetForegroundWindow(m_window);
+
+    const RECT bounds = Bounds();
+    const int x = bounds.left + RectWidth(bounds) / 2;
+    const int y = bounds.top + RectHeight(bounds) / 2;
+
+    const int chosen = ::TrackPopupMenu(
+        menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_LEFTBUTTON | TPM_CENTERALIGN | TPM_VCENTERALIGN,
+        x, y, 0, m_window, nullptr);
+
+    // MSDN's workaround: without a message posted to the owner the menu can stay up after the
+    // selection.
+    ::PostMessageW(m_window, WM_NULL, 0, 0);
+    ::DestroyMenu(menu);
+
+    m_quickMenuOpen = false;
+    UpdateStyles();
+
+    switch (chosen) {
+        case kQuickMenuControlPanel:
+            return QuickMenuCommand::ShowControlPanel;
+        case kQuickMenuStopOverlay:
+            return QuickMenuCommand::StopOverlay;
+        case kQuickMenuQuit:
+            return QuickMenuCommand::Quit;
+        default:
+            return QuickMenuCommand::None;
+    }
 }
 
 void OverlayWindow::UpdateStyles() {

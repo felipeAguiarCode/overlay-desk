@@ -316,20 +316,37 @@ void Application::UpdateOverlayPresence() {
     }
 }
 
-// Escape twice in quick succession closes the overlay and hands the user back to the control
-// panel. A single Escape does nothing: in a game a stray Escape is common, and losing the
-// overlay to one keystroke would be worse than having no shortcut at all.
+// ADR-0012. Escape opens the overlay's quick menu. It only reaches the overlay when the
+// overlay has focus - Play Mode carries WS_EX_NOACTIVATE, so while a game is in front the
+// keystroke goes to the game and the ShowQuickMenu shortcut is the way in.
 void Application::HandleEscape() {
-    constexpr auto kDoubleTapWindow = std::chrono::milliseconds(600);
-    const auto now = std::chrono::steady_clock::now();
+    ShowQuickMenu();
+}
 
-    if (m_lastEscape != std::chrono::steady_clock::time_point{} &&
-        now - m_lastEscape <= kDoubleTapWindow) {
-        m_lastEscape = {};
-        CloseOverlayToControlPanel();
+void Application::ShowQuickMenu() {
+    // Nothing on screen to hang a menu off, and no sensible action behind any of its items.
+    if (!m_overlayWindow.IsCreated() || !m_state.overlayVisible) {
         return;
     }
-    m_lastEscape = now;
+
+    switch (m_overlayWindow.ShowQuickMenu()) {
+        case QuickMenuCommand::ShowControlPanel:
+            m_controlWindow.BringToFront();
+            return;
+
+        case QuickMenuCommand::StopOverlay:
+            CloseOverlayToControlPanel();
+            return;
+
+        case QuickMenuCommand::Quit:
+            LogInfo("Quick menu: quit requested.");
+            m_running = false;
+            return;
+
+        case QuickMenuCommand::None:
+        default:
+            return;
+    }
 }
 
 void Application::CloseOverlayToControlPanel() {
@@ -351,7 +368,7 @@ void Application::CloseOverlayToControlPanel() {
         m_panel.RequestTabRestore();
     }
 
-    LogInfo("Overlay: closed by double Escape; back to the control panel.");
+    LogInfo("Overlay: stopped; back to the control panel.");
 }
 
 void Application::MatchOverlayToTarget() {
@@ -449,6 +466,10 @@ void Application::TriggerHotkey(HotkeyAction action) {
 
         case HotkeyAction::ShowControlPanel:
             m_controlWindow.BringToFront();
+            return;
+
+        case HotkeyAction::ShowQuickMenu:
+            ShowQuickMenu();
             return;
 
         case HotkeyAction::Count:

@@ -48,6 +48,7 @@ private:
     void RequestOverlayRepaint() noexcept { m_overlayRepaintRequested = true; }
     void OnOverlayResized(uint32_t width, uint32_t height);
     void HandleEscape();
+    void ShowQuickMenu();
     void CloseOverlayToControlPanel();
     void MatchOverlayToTarget();
 
@@ -117,10 +118,6 @@ private:
     bool m_initialized = false;
     bool m_running = false;
     bool m_graphicsReady = false;
-
-    // Double-Escape closes the overlay. The timestamp is what makes it a deliberate gesture
-    // rather than something a stray Escape can trigger.
-    std::chrono::steady_clock::time_point m_lastEscape{};
 };
 
 }  // namespace overlaydesk

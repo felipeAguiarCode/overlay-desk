@@ -48,6 +48,10 @@ constexpr ActionInfo kActions[kHotkeyActionCount] = {
      HotkeyModControl | HotkeyModShift, VK_LEFT},
     {"showControlPanel", "Show control panel", "Brings this window back to the front.",
      HotkeyModControl | HotkeyModShift, 'P'},
+    {"showQuickMenu", "Quick menu",
+     "Opens the overlay's quick menu. Escape does the same, but only reaches the overlay when "
+     "it has focus - in Play Mode the game does, so this chord is the way in.",
+     HotkeyModControl | HotkeyModShift, 'Q'},
 };
 
 constexpr const char* kLetterNames[] = {"A", "B", "C", "D", "E", "F", "G", "H", "I",

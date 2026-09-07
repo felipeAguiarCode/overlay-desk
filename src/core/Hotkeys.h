@@ -35,6 +35,7 @@ enum class HotkeyAction : int {
     NextPreset,
     PreviousPreset,
     ShowControlPanel,
+    ShowQuickMenu,
     Count,
 };
 

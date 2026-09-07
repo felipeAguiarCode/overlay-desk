@@ -53,14 +53,29 @@ para redimensionar. Saia com o mesmo atalho e o click-through volta.
 
 Se o atalho não funcionar, outro programa já o registrou — o botão continua funcionando.
 
-### Fechar o overlay rápido
+### O menu rápido
 
-**`Esc` duas vezes seguidas** (menos de meio segundo entre elas) fecha o overlay e traz o
-painel de configurações de volta, já na aba Overlay. Um `Esc` sozinho não faz nada — num jogo
-um `Esc` avulso é comum demais para custar o overlay.
+**`Esc`** abre um menu no meio do overlay com três saídas:
 
-O gesto funciona quando o painel está em foco ou quando o overlay está em Edit Mode. Durante
-o Play Mode o overlay é click-through e não recebe teclado — nesse caso use o painel.
+| Item | O que faz |
+|---|---|
+| `Control panel` | Traz o painel de configurações para a frente, sem mexer no overlay |
+| `Stop overlay` | Desliga o overlay e devolve o painel, já na aba Overlay |
+| `Quit` | Fecha o Overlay Desk |
+
+`Esc` de novo, ou um clique fora, fecha o menu sem fazer nada.
+
+**Quando o `Esc` funciona:** ele só chega ao overlay quando o overlay tem foco — em Edit Mode,
+ou com o `Click-through` desligado. Enquanto você joga, o foco é do jogo, e o `Esc` que você
+aperta é do jogo: o Overlay Desk nunca vê essa tecla, de propósito. Um programa que
+interceptasse o `Esc` do sistema inteiro roubaria o menu de pausa de todo jogo que você abrisse.
+
+**Por isso existe `Ctrl` + `Shift` + `Q`**, que abre o mesmo menu de qualquer lugar, com o jogo
+em foco. É esse o caminho durante o Play Mode, e ele é reconfigurável na aba Hotkeys como
+qualquer outro atalho.
+
+Enquanto o menu está aberto o overlay aceita cliques mesmo em modo click-through — senão não
+haveria como escolher um item. Ao fechar, tudo volta exatamente como estava.
 
 ### Travas
 
@@ -269,6 +284,7 @@ O que vem configurado:
 | `Ctrl` + `Shift` + `→` | Próximo preset |
 | `Ctrl` + `Shift` + `←` | Preset anterior |
 | `Ctrl` + `Shift` + `P` | Traz o painel de volta para a frente |
+| `Ctrl` + `Shift` + `Q` | Abre o menu rápido do overlay |
 
 Para trocar um atalho, clique no botão que mostra a combinação atual e **aperte a nova**.
 `Esc` cancela. `Clear` deixa a ação sem atalho, `Default` devolve o original.
