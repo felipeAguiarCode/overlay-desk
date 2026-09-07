@@ -12,6 +12,13 @@ Redistributable.
 Versão 0.1.0: todas as features do MVP estão implementadas e os testes passam. A única
 pendência é fechar a corrida de 60 minutos do teste de estabilidade (`docs/planning/BACKLOG.md`).
 
+## Download
+
+**[Baixe a versão mais recente](https://github.com/felipeAguiarCode/overlay-desk/releases/latest)**
+— descompacte em qualquer pasta e execute `OverlayDesk.exe`. Não há instalação, nada é escrito
+no registro, e todas as versões ficam em
+[Releases](https://github.com/felipeAguiarCode/overlay-desk/releases).
+
 ## Uso
 
 1. Abra o emulador, depois o `OverlayDesk.exe`.
