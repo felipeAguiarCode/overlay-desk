@@ -72,6 +72,12 @@ void ControlPanel::DrawTargetPage(AppState& state, const PanelActions& actions) 
         return;
     }
 
+    widgets::HelpText(
+        "Click to capture a window. Double-click to capture it and bring it to the front - "
+        "which is the one to use for anything marked minimized, because a minimized window "
+        "sends no frames at all and the overlay will sit on its placeholder until it is back.");
+    ImGui::Spacing();
+
     if (ImGui::BeginChild("##targets", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
         for (const TargetWindowInfo& candidate : m_targets) {
             ImGui::PushID(candidate.window);
@@ -82,6 +88,21 @@ void ControlPanel::DrawTargetPage(AppState& state, const PanelActions& actions) 
 
             if (ImGui::Selectable(title.empty() ? "(untitled)" : title.c_str(), selected,
                                   ImGuiSelectableFlags_AllowDoubleClick)) {
+                // Double-click means "use this one and show it to me". A single click only
+                // picks, so the list stays browsable without windows jumping around.
+                //
+                // Raising it is not a convenience. A minimized window sends no frames at all,
+                // so picking one leaves the overlay on its no-signal backdrop while every
+                // control still appears to work - which is exactly the dead end this list used
+                // to walk people into.
+                //
+                // Restore first, then capture: a minimized window reports a degenerate size,
+                // and starting on that would build the frame pool at the wrong dimensions and
+                // rely on the resize path to sort it out afterwards.
+                if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && actions.revealWindow) {
+                    actions.revealWindow(candidate.window);
+                }
+
                 if (actions.selectTarget) {
                     actions.selectTarget(candidate.window);
                 }
@@ -89,9 +110,19 @@ void ControlPanel::DrawTargetPage(AppState& state, const PanelActions& actions) 
 
             // Secondary line: executable, size, and whether it is currently minimized -
             // enough for the user to tell two emulator windows apart.
+            //
+            // A minimized window has no meaningful size to report: Windows hands back something
+            // like 223x32 for it, which looks like a real measurement and is not one. Printing
+            // it next to genuine sizes invited exactly the wrong conclusion, so minimized rows
+            // say so in words instead.
             ImGui::SameLine();
-            ImGui::TextDisabled("  %s  %dx%d%s", executable.c_str(), RectWidth(candidate.bounds),
-                                RectHeight(candidate.bounds), candidate.minimized ? "  (min)" : "");
+            if (candidate.minimized) {
+                ImGui::TextDisabled("  %s  minimized - double-click to restore and capture",
+                                    executable.c_str());
+            } else {
+                ImGui::TextDisabled("  %s  %dx%d", executable.c_str(),
+                                    RectWidth(candidate.bounds), RectHeight(candidate.bounds));
+            }
 
             ImGui::PopID();
         }

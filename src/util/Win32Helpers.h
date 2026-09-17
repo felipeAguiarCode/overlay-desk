@@ -66,6 +66,13 @@ RECT GetVisibleWindowBounds(HWND window) noexcept;
 // particular. They enumerate as visible yet capture as a frozen or empty surface.
 bool IsWindowCloaked(HWND window) noexcept;
 
+// Un-minimizes a window and puts it in front of everything else.
+//
+// SW_RESTORE on its own is not enough and reads as "the button did nothing": the window comes
+// back at the bottom of the z-order, still hidden behind whatever the user was looking at. The
+// point of asking for it is to *see* it, so the raise is part of the operation.
+void RestoreAndFocusWindow(HWND window) noexcept;
+
 std::wstring GetWindowTitleText(HWND window);
 
 // Executable file name (no directory) owning the window, e.g. "retroarch.exe".

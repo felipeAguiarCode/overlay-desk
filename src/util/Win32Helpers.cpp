@@ -187,6 +187,26 @@ bool IsWindowCloaked(HWND window) noexcept {
     return cloaked != 0;
 }
 
+void RestoreAndFocusWindow(HWND window) noexcept {
+    if (window == nullptr || ::IsWindow(window) == 0) {
+        return;
+    }
+
+    // SW_RESTORE on a window that is not minimized would undo a maximise, which is not what
+    // was asked for - so only the minimized case is restored, and the rest is just a raise.
+    if (::IsIconic(window) != 0) {
+        ::ShowWindow(window, SW_RESTORE);
+    }
+
+    ::BringWindowToTop(window);
+
+    // Windows can refuse this when the caller is not the foreground process. It is allowed
+    // here because the user just clicked inside our own window, which is exactly the case the
+    // foreground rules are written to permit. If it is refused anyway, BringWindowToTop above
+    // has already done the visible part of the job.
+    ::SetForegroundWindow(window);
+}
+
 std::wstring GetWindowTitleText(HWND window) {
     const int length = ::GetWindowTextLengthW(window);
     if (length <= 0) {

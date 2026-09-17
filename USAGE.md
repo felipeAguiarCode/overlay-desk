@@ -329,6 +329,13 @@ Aba **Settings**.
   limitar realmente custa menos.
 - **Pause while the source is minimized** — minimizou o emulador, o overlay para de trabalhar.
 
+> **Se nada que você mexe aparece na tela**, olhe o aviso acima das abas. Uma janela minimizada
+> não manda frame nenhum, então o overlay mostra o hachurado de "sem sinal" e os filtros são
+> aplicados a ele, não a uma imagem. Os geométricos (Distortion, Jitter, Shimmer, Rolling
+> Shutter, Glitch) deformam o hachurado e você vê que estão vivos; os que leem a imagem
+> capturada (Chromatic Aberration, Lens Softness, Bloom, Sharpen, Edge Glow) não têm o que
+> fazer sem ela. O botão `Restore source window` no aviso resolve.
+
 Consumo típico: entre 55 e 75 MB de RAM com a captura ativa.
 
 Se o emulador estiver pausado, o overlay mantém o último quadro na tela em vez de apagá-lo.

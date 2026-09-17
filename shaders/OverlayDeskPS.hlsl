@@ -36,6 +36,7 @@
 
 static const float3 kEditBorderColor = float3(0.15, 0.75, 1.00);
 static const float3 kIdleBackdropColor = float3(0.05, 0.05, 0.07);
+static const float3 kIdleBackdropStripe = float3(0.14, 0.14, 0.18);
 static const float3 kLumaWeights = float3(0.2126, 0.7152, 0.0722);
 static const float kTau = 6.28318530718;
 
@@ -1277,6 +1278,42 @@ float4 ApplyScope(float3 color, float alpha, float2 screenUv)
     return result;
 }
 
+// --- No-signal backdrop ---------------------------------------------------------------------
+//
+// What the overlay shows when there is no capture frame: no target picked yet, the target
+// closed, or the source is minimized and the capture is parked (RNF-004).
+//
+// It is deliberately NOT a flat fill any more. A flat field cannot show a geometric change -
+// warping the coordinates of a constant colour is a mathematical no-op - so with no source the
+// distortion, jitter, shimmer, rolling shutter and glitch stages all appeared dead while the
+// colour stages went on visibly tinting the panel. That asymmetry reads exactly like "fisheye
+// is broken" and cost a real debugging session to unpick.
+//
+// Diagonal hatching fixes both halves of that: it says "there is nothing here" at a glance, and
+// it gives the UV stages something to bend so a parameter change is visible while the user sets
+// the look up.
+//
+// Takes the WARPED uv, not the screen uv - that is the whole point, and it is what makes the
+// stripes bow when the distortion is dialled.
+//
+// No g_time: the idle overlay is only redrawn when a repaint is requested, so an animated
+// pattern would either judder or force a continuous redraw, and RNF-004/AT-015 require a
+// minimized source to cost essentially no GPU.
+float3 NoSignalBackdrop(float2 uv)
+{
+    const float aspect = g_outputResolution.x / max(g_outputResolution.y, 1.0);
+
+    // Roughly 26 bands across the frame, measured on the long axis so they stay square-ish on
+    // any overlay shape rather than shearing with the aspect.
+    const float diagonal = (uv.x * aspect + uv.y) * 13.0;
+    const float band = abs(frac(diagonal) - 0.5) * 2.0;
+
+    // Wide, soft edges: this has to read as a placeholder at a glance and never as content.
+    const float stripe = smoothstep(0.35, 0.75, band);
+
+    return lerp(kIdleBackdropColor, kIdleBackdropStripe, stripe);
+}
+
 float4 main(PixelInput input) : SV_Target
 {
     const float2 pixel = input.position.xy;
@@ -1311,9 +1348,11 @@ float4 main(PixelInput input) : SV_Target
     }
     else
     {
-        // No capture yet. A dim panel makes the overlay findable while the user positions it;
-        // it disappears the moment real frames arrive.
-        color = kIdleBackdropColor;
+        // No capture yet. A dim hatched panel makes the overlay findable while the user
+        // positions it, says plainly that nothing is being captured, and - unlike the flat fill
+        // this used to be - actually shows the geometric stages doing their work. It disappears
+        // the moment real frames arrive.
+        color = NoSignalBackdrop(uv);
         alpha = 0.55;
     }
 

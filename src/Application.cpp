@@ -28,6 +28,9 @@ constexpr auto kAutoSaveInterval = std::chrono::seconds(2);
 // When capture *is* flowing, FrameArrived has already repainted well inside this window and
 // the gate in Tick skips the call entirely.
 constexpr auto kIdleRedrawInterval = std::chrono::milliseconds(33);
+// Long enough that a slow first frame is not reported as a fault, short enough that the user
+// is told before they start blaming a filter.
+constexpr auto kSilentSourceGrace = std::chrono::seconds(2);
 
 // One UI frame per display refresh is plenty; the wait also yields the CPU so an idle
 // panel costs nothing.
@@ -201,6 +204,7 @@ void Application::Tick() {
     }
 
     m_state.stats = m_capture.Stats();
+    UpdateSilentSourceWatchdog(now);
 
     if (now - m_lastOverlayRender >= kIdleRedrawInterval) {
         RepaintOverlay();
@@ -645,6 +649,8 @@ void Application::SelectTarget(HWND target) {
     if (started) {
         m_state.captureStatus = CaptureStatus::Running;
         m_state.statusMessage.clear();
+        m_captureStartedAt = std::chrono::steady_clock::now();
+        m_silentSourceReported = false;
         m_tracker.SetTarget(target,
                             WindowTracker::Events{
                                 .onTargetClosed = [this]() { OnTargetClosed(); },
@@ -737,6 +743,31 @@ void Application::OnTargetClosed() {
     RepaintOverlay();
 }
 
+// A capture that starts successfully and then never delivers a frame is indistinguishable, on
+// screen, from one that is working: the overlay just keeps showing its no-signal backdrop. The
+// commonest cause is a target that was already minimized when it was picked, but any window that
+// stops producing content lands here too, so this reports the symptom rather than guessing at
+// the cause.
+void Application::UpdateSilentSourceWatchdog(std::chrono::steady_clock::time_point now) {
+    if (!m_capture.IsRunning() || m_capture.IsPaused() ||
+        m_state.captureStatus != CaptureStatus::Running) {
+        return;
+    }
+    if (m_state.stats.framesArrived > 0) {
+        return;
+    }
+    if (now - m_captureStartedAt < kSilentSourceGrace) {
+        return;
+    }
+
+    m_state.statusMessage = "No frames from the source yet";
+    if (!m_silentSourceReported) {
+        m_silentSourceReported = true;
+        LogWarn("Capture: no frame has arrived since the session started. The source is "
+                "producing nothing - a minimized or hidden window is the usual reason.");
+    }
+}
+
 void Application::UpdateCapturePauseState() {
     if (!m_capture.IsRunning()) {
         return;
@@ -785,6 +816,29 @@ void Application::ApplyPreset(const Preset& preset) {
     m_state.settings.effects = preset.effects;
     m_state.settings.ui.activePreset = preset.name;
     m_state.settingsDirty = true;
+
+    // Picking a preset is a request to *see* it. Applying one to an overlay that is switched
+    // off, or that has no target, used to change nothing on screen at all - the look was
+    // stored and the user was left staring at their desktop wondering what had happened.
+    //
+    // So the preset brings the overlay up with it: resume the last target if capture is not
+    // running, switch the overlay on, and lay it over the window it is filtering.
+    if (!m_state.HasTarget()) {
+        ResumeLastTarget();
+    }
+
+    if (m_state.HasTarget()) {
+        if (!m_state.settings.overlay.enabled) {
+            m_state.settings.overlay.enabled = true;
+            LogInfo("Overlay: enabled by applying a preset.");
+        }
+        UpdateOverlayPresence();
+        UpdateCapturePauseState();
+
+        // Over the target, at the target's size. A preset describes a whole look, and a look
+        // that only covers a corner of the window is not the one the user picked.
+        MatchOverlayToTarget();
+    }
 
     RequestOverlayRepaint();
     LogInfo("Presets: applied '{}'.", preset.name);
@@ -947,6 +1001,17 @@ ui::PanelActions Application::MakePanelActions() {
     };
 
     actions.refreshOverlay = [this]() { RequestOverlayRepaint(); };
+    actions.restoreSourceWindow = [this]() {
+        HWND target = m_tracker.Target();
+        if (target == nullptr || ::IsWindow(target) == 0) {
+            return;
+        }
+        // The tracker picks the change up on its next poll and UpdateCapturePauseState un-parks
+        // the capture from there.
+        RestoreAndFocusWindow(target);
+        LogInfo("Tracker: restore requested for the source window.");
+    };
+    actions.revealWindow = [](HWND window) { RestoreAndFocusWindow(window); };
     actions.presets = MakePresetActions();
     actions.applyRenderSettings = [this]() { ApplyRenderSettings(); };
     actions.saveSettings = [this]() { SaveSettingsNow(); };

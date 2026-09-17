@@ -176,6 +176,7 @@ void ControlPanel::Draw(AppState& state, const PanelActions& actions) {
 
     DrawStatusBar(state);
     ImGui::Spacing();
+    DrawSourceWarning(state, actions);
 
     // RF-018 lists UI preferences among the things that persist, and reopening on the tab
     // the user left is the only part of that which is not already automatic.
@@ -227,6 +228,75 @@ void ControlPanel::Draw(AppState& state, const PanelActions& actions) {
     m_pendingTabRestore = false;
 
     ImGui::End();
+}
+
+// A loud, page-independent warning for the one state that silently wastes the user's time:
+// there is no capture frame, so the overlay is showing its no-signal backdrop and nothing they
+// change on any tab will appear on real content.
+//
+// This exists because the information was already on screen and still missed. The status bar
+// says "Paused | Source minimized", but in dim grey, on one line, at the top of a panel whose
+// filter sliders are what the user is actually looking at. Someone spent a session concluding
+// that the fisheye filter was broken while the real answer was sitting right there.
+void ControlPanel::DrawSourceWarning(const AppState& state, const PanelActions& actions) {
+    // "Running" is not the same as "delivering". A window that was already minimized when it
+    // was picked starts capture cleanly and then sends nothing at all, which is the exact case
+    // that sent someone hunting through the filter code.
+    const bool silent = state.stats.framesArrived == 0;
+    if (state.captureStatus == CaptureStatus::Running && !silent) {
+        return;
+    }
+
+    const bool minimized = state.captureStatus == CaptureStatus::Paused && state.HasTarget();
+
+    const char* headline = nullptr;
+    switch (state.captureStatus) {
+        case CaptureStatus::Idle:
+            headline = "No source selected - the overlay is showing a placeholder.";
+            break;
+        case CaptureStatus::Paused:
+            headline = minimized
+                           ? "The source window is minimized, so it is sending no frames."
+                           : "Capture is paused, so no frames are arriving.";
+            break;
+        case CaptureStatus::TargetClosed:
+            headline = "The source window has closed.";
+            break;
+        case CaptureStatus::Unsupported:
+        case CaptureStatus::Failed:
+            headline = "Capture is not running.";
+            break;
+        case CaptureStatus::Running:
+            headline = "Capture started, but the source has not sent a single frame.";
+            break;
+    }
+    if (headline == nullptr) {
+        return;
+    }
+
+    const ImVec4 tint = StatusColor(state.captureStatus);
+    ImGui::PushStyleColor(ImGuiCol_Border, tint);
+    ImGui::BeginChild("##sourcewarning", ImVec2(0, 0),
+                      ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY,
+                      ImGuiWindowFlags_NoScrollbar);
+
+    ImGui::TextColored(tint, "%s", headline);
+    ImGui::TextWrapped(
+        "Filters still apply, but to the diagonal placeholder rather than to a picture. "
+        "Distortion, Jitter, Shimmer, Rolling Shutter and Glitch will bend the placeholder; "
+        "Chromatic Aberration, Lens Softness, Bloom, Sharpen and Edge Glow read the captured "
+        "image and can do nothing without one.");
+
+    if (minimized && actions.restoreSourceWindow) {
+        ImGui::Spacing();
+        if (ImGui::Button("Restore source window")) {
+            actions.restoreSourceWindow();
+        }
+    }
+
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+    ImGui::Spacing();
 }
 
 void ControlPanel::DrawStatusBar(const AppState& state) {

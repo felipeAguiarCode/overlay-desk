@@ -487,7 +487,18 @@ LRESULT OverlayWindow::WindowProc(HWND window, UINT message, WPARAM wParam, LPAR
             // different scale factor.
             m_dpi = HIWORD(wParam);
             const auto* suggested = reinterpret_cast<const RECT*>(lParam);
-            if (suggested != nullptr) {
+
+            // ...but only when the move was not ours. The suggestion preserves the window's
+            // *apparent* size across the scale change, which is right for a user dragging it
+            // between monitors and wrong for MatchBounds, which asks for exact physical bounds
+            // so the overlay covers the target. Taking the suggestion there rescaled a
+            // 790x455 request down to 527x303 on a 96 dpi monitor - small enough and far
+            // enough off that it reads as the overlay having vanished.
+            //
+            // SetWindowPos dispatches this message synchronously, so the ApplyGeometry guard
+            // is still set and says exactly that: the caller already knows the rectangle it
+            // wants, in the DPI of the monitor it is sending the window to.
+            if (suggested != nullptr && !m_applyingGeometry) {
                 m_applyingGeometry = true;
                 ::SetWindowPos(window, nullptr, suggested->left, suggested->top,
                                RectWidth(*suggested), RectHeight(*suggested),

@@ -68,6 +68,7 @@ private:
     void OnCaptureFrame(ID3D11ShaderResourceView* source, const SourceGeometry& geometry);
     void OnTargetClosed();
     void UpdateCapturePauseState();
+    void UpdateSilentSourceWatchdog(std::chrono::steady_clock::time_point now);
     void ApplyRenderSettings();
 
     // --- Presets ------------------------------------------------------------------------
@@ -106,6 +107,11 @@ private:
     std::chrono::steady_clock::time_point m_lastTrackerPoll{};
     std::chrono::steady_clock::time_point m_lastOverlayRender{};
     std::chrono::steady_clock::time_point m_lastAutoSave{};
+
+    // When the current capture session started, so a target that starts cleanly and then never
+    // sends anything can be reported instead of looking like a working overlay.
+    std::chrono::steady_clock::time_point m_captureStartedAt{};
+    bool m_silentSourceReported = false;
 
     // True while the overlay is showing the idle backdrop rather than a captured frame.
     // Lets the idle repaint skip work once the backdrop is already on screen.

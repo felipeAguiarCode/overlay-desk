@@ -132,25 +132,32 @@ public:
         ID3D11RenderTargetView* targetView = nullptr;
         ID3D11Texture2D* staging = nullptr;
 
-        D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = source.width;
-        desc.Height = source.height;
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_IMMUTABLE;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        // An empty image means "no capture frame", which is a state the shader has its own
+        // branch for and which the overlay is in whenever no target is picked, the target has
+        // closed, or the source is minimized and the capture is parked.
+        const bool hasSource = source.width > 0 && source.height > 0;
 
-        D3D11_SUBRESOURCE_DATA initial{};
-        initial.pSysMem = source.pixels.data();
-        initial.SysMemPitch = source.width * static_cast<UINT>(sizeof(Rgba));
+        if (hasSource) {
+            D3D11_TEXTURE2D_DESC desc{};
+            desc.Width = source.width;
+            desc.Height = source.height;
+            desc.MipLevels = 1;
+            desc.ArraySize = 1;
+            desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            desc.SampleDesc.Count = 1;
+            desc.Usage = D3D11_USAGE_IMMUTABLE;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
-        if (FAILED(m_device->CreateTexture2D(&desc, &initial, &sourceTexture)) ||
-            FAILED(m_device->CreateShaderResourceView(sourceTexture, nullptr, &sourceView))) {
-            Release(sourceView);
-            Release(sourceTexture);
-            return result;
+            D3D11_SUBRESOURCE_DATA initial{};
+            initial.pSysMem = source.pixels.data();
+            initial.SysMemPitch = source.width * static_cast<UINT>(sizeof(Rgba));
+
+            if (FAILED(m_device->CreateTexture2D(&desc, &initial, &sourceTexture)) ||
+                FAILED(m_device->CreateShaderResourceView(sourceTexture, nullptr, &sourceView))) {
+                Release(sourceView);
+                Release(sourceTexture);
+                return result;
+            }
         }
 
         D3D11_TEXTURE2D_DESC rt{};
@@ -187,7 +194,7 @@ public:
 
         const ShaderConstants constants =
             BuildShaderConstants(settings, outWidth, outHeight, geometry, time,
-                                 /*hasSource=*/true, /*editMode=*/false, 0.0f);
+                                 hasSource, /*editMode=*/false, 0.0f);
 
         D3D11_MAPPED_SUBRESOURCE mapped{};
         if (SUCCEEDED(m_context->Map(m_constants, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
@@ -873,6 +880,67 @@ void TestSharpenDoesNotRimTheContentEdge(Harness& harness) {
     CHECK(CountDifferences(edgedPlain, edged) > 100);
 }
 
+// With no capture source the overlay paints its own backdrop, and that backdrop has to carry
+// structure. This is a regression test for a real and expensive confusion: the backdrop used to
+// be a flat fill, and warping the coordinates of a constant colour changes nothing, so with no
+// source every geometric stage - distortion above all - looked broken while the colour stages
+// went on visibly tinting the panel. A user reported "fisheye and anti-fisheye do not work"
+// when the actual fault was that their capture target was a minimized window delivering no
+// frames.
+//
+// Two things are pinned here. The backdrop is not uniform, and it responds to the distortion -
+// which it only can if it is built from the WARPED uv rather than from the screen uv. Rebuilding
+// it from input.uv would be an easy "simplification" that silently restores the bug.
+void TestIdleBackdropShowsGeometry(Harness& harness) {
+    const Image none;  // no source at all: this is the state the test is about
+    constexpr uint32_t kOut = 256;
+
+    AppSettings flat;
+    const Image idle = harness.Render(flat, none, kOut, kOut);
+    if (idle.pixels.empty()) {
+        CHECK(false);
+        return;
+    }
+
+    // Not a flat fill.
+    const Rgba& first = idle.pixels.front();
+    size_t differing = 0;
+    for (const Rgba& pixel : idle.pixels) {
+        if (pixel.r != first.r || pixel.g != first.g || pixel.b != first.b) {
+            ++differing;
+        }
+    }
+    if (differing < idle.pixels.size() / 20) {
+        std::printf("FAIL: idle backdrop is essentially uniform (%zu of %zu pixels differ); "
+                    "geometric filters cannot show on it.\n",
+                    differing, idle.pixels.size());
+        ++g_failures;
+    }
+
+    // And it bends. Fisheye, neutral and anti-fisheye have to be three different images.
+    AppSettings bulge;
+    bulge.filters.distortion.enabled = true;
+    bulge.filters.distortion.amount = 1.0f;
+
+    AppSettings pinch;
+    pinch.filters.distortion.enabled = true;
+    pinch.filters.distortion.amount = -1.0f;
+
+    const Image bulged = harness.Render(bulge, none, kOut, kOut);
+    const Image pinched = harness.Render(pinch, none, kOut, kOut);
+
+    const size_t bulgeMoved = CountDifferences(idle, bulged);
+    const size_t pinchMoved = CountDifferences(idle, pinched);
+    const size_t halvesDiffer = CountDifferences(bulged, pinched);
+
+    std::printf("  idle backdrop: %zu of %zu pixels textured, fisheye moved %zu, anti moved %zu\n",
+                differing, idle.pixels.size(), bulgeMoved, pinchMoved);
+
+    CHECK(bulgeMoved > 500);
+    CHECK(pinchMoved > 500);
+    CHECK(halvesDiffer > 500);
+}
+
 // --- Sample renderer ------------------------------------------------------------------------
 //
 // Not a test: a diagnostic mode that writes what the shader actually produces to disk, so a
@@ -911,6 +979,26 @@ int WriteSamples(Harness& harness, const char* directory) {
         char path[512];
         std::snprintf(path, sizeof(path), "%s\\source.bmp", directory);
         if (WriteBmp(path, harness.Render(off, source, kOutW, kOutH), background)) {
+            ++written;
+        }
+    }
+
+    {
+        // The no-source backdrop, flat and bent, because "does a geometric filter show
+        // when there is nothing to capture" is a question that has already been answered
+        // wrong once.
+        const AppSettings off;
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s\\no-signal.bmp", directory);
+        if (WriteBmp(path, harness.Render(off, Image{}, kOutW, kOutH), background)) {
+            ++written;
+        }
+
+        AppSettings bent;
+        bent.filters.distortion.enabled = true;
+        bent.filters.distortion.amount = 1.0f;
+        std::snprintf(path, sizeof(path), "%s\\no-signal-fisheye.bmp", directory);
+        if (WriteBmp(path, harness.Render(bent, Image{}, kOutW, kOutH), background)) {
             ++written;
         }
     }
@@ -1064,6 +1152,7 @@ int main(int argc, char** argv) {
     TestDistortionNeverOpensAHole(harness);
     TestBloomDoesNotLeakIntoLetterbox(harness);
     TestSharpenDoesNotRimTheContentEdge(harness);
+    TestIdleBackdropShowsGeometry(harness);
 
     if (g_failures == 0) {
         std::printf("All shader pipeline tests passed.\n");

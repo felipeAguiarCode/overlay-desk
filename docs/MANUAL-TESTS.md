@@ -155,6 +155,24 @@ repaint reusa a view do último frame — ver ADR-0006 item 6.
 | Minimizar a janela de origem | Status vira `Paused`; o log registra `Tracker: target minimized`; CPU e GPU caem a praticamente zero |
 | Restaurar | `Tracker: target restored`, captura volta |
 
+### Alvo que **já** estava minimizado ao ser escolhido
+
+Este é o caso que passou despercebido e custou uma sessão de depuração: a janela inicia a
+captura normalmente e depois não entrega frame nenhum, então a tela fica indistinguível de um
+overlay funcionando.
+
+| Passo | Esperado |
+|---|---|
+| Minimizar uma janela, e então escolhê-la como alvo | O log registra `Tracker: target is already minimized...` — antes não registrava **nada** |
+| Na lista, uma janela minimizada | A linha diz `minimized - double-click to restore and capture`, e **não** um tamanho (o 223x32 que o Windows devolve não é medida de nada) |
+| **Duplo clique** numa linha minimizada | A janela restaura, vem para a frente, e a captura começa nela — nessa ordem, para o frame pool nascer no tamanho certo |
+| Clique **simples** numa linha | Só seleciona; nenhuma janela pula para a frente, então dá para percorrer a lista |
+| Olhar qualquer aba do painel (Filters inclusive) | O aviso de fonte aparece acima das abas, não só na barra de status |
+| Clicar `Restore source window` | A janela restaura, o aviso some e a captura começa a entregar |
+| Escolher uma janela grande que não produz conteúdo | Depois de ~2 s: status `No frames from the source yet` e um aviso no log |
+| Com o aviso na tela, mexer no `Amount` da Distortion | O hachurado do fundo **deforma** — é assim que se vê que o filtro está vivo mesmo sem fonte |
+| Com o aviso na tela, mexer em Bloom / Sharpen / Lens Softness / Chromatic | Nada muda, e é o correto: esses leem a textura capturada, que não existe |
+
 ## 9. Target fechado — AT-014, RNF-009
 
 | Passo | Esperado |
@@ -536,6 +554,29 @@ entram nele (CONFIGURATION.md), então o mesmo arquivo funciona em outra máquin
 
 O round-trip de todos os parâmetros, a tolerância a arquivo corrompido e a proteção contra
 `../` no nome são cobertos pelo teste automatizado `presets.repository`.
+
+### Aplicar um preset traz o overlay junto
+
+Escolher um preset é um pedido para **ver** aquilo. Antes, aplicar um com o overlay desligado
+guardava o look e não mudava nada na tela.
+
+| Passo | Esperado |
+|---|---|
+| Com o overlay desligado, aplicar um preset | O overlay liga sozinho; o log registra `Overlay: enabled by applying a preset` |
+| Com a captura parada mas um alvo anterior conhecido | A captura volta nele antes de o overlay aparecer |
+| Depois de aplicar | O overlay fica **sobre** o alvo, no tamanho dele (`Overlay: matched target bounds` bate com o tamanho de `Capture: started on`) |
+| Sem alvo nenhum e sem alvo anterior | Nada de overlay — não há o que cobrir; o aviso de fonte explica |
+| Ciclar presets pelo atalho (`Ctrl`+`Shift`+`→`) | Mesmo comportamento; é o mesmo caminho |
+
+### Alvo num monitor com DPI diferente
+
+| Passo | Esperado |
+|---|---|
+| Alvo num monitor 96 dpi, painel num de 144 dpi, aplicar um preset | `matched target bounds` sai **igual** ao tamanho de `Capture: started on` |
+
+Este é o caso que quebrava: o `WM_DPICHANGED` chega no meio do `SetWindowPos` do
+`MatchBounds` e a sugestão do Windows preserva o tamanho *aparente*, encolhendo um pedido de
+790x455 para 527x303. Um overlay 1,5x menor e deslocado lê como "o overlay sumiu".
 
 ### Seção Bodycam and GoPro
 

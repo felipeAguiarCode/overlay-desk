@@ -32,6 +32,16 @@ void WindowTracker::SetTarget(HWND window, Events events) {
         m_bounds = GetVisibleWindowBounds(window);
         m_minimized = ::IsIconic(window) != 0;
         m_monitorIndex = MonitorIndexOf(window);
+
+        // Poll() only reports *transitions*, so a target that is already minimized when it is
+        // picked would otherwise never produce a single line of log. That silence is expensive:
+        // such a window delivers no frames at all, the overlay sits on its no-signal backdrop,
+        // and the only trace left is the absence of "first frame arrived" - which is a hard
+        // thing to notice while reading a log for something that went wrong.
+        if (m_minimized) {
+            LogInfo("Tracker: target is already minimized; it will deliver no frames until "
+                    "it is restored.");
+        }
     } else {
         m_bounds = RECT{};
         m_minimized = false;
