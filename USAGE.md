@@ -236,7 +236,7 @@ apagados.
 ### Seções
 
 A lista é agrupada em seções recolhíveis, na mesma ordem em que aparecem abaixo. Clique no
-cabeçalho para dobrar uma seção inteira — com 101 presets de fábrica, é o que torna a lista
+cabeçalho para dobrar uma seção inteira — com 102 presets de fábrica, é o que torna a lista
 navegável. O número ao lado do nome é quantos presets há ali.
 
 A seção fica gravada no arquivo do preset, então renomear um preset não o tira do grupo dele.
@@ -250,11 +250,25 @@ Presets que você criar entram em **`Custom`**, que aparece por último.
 | Fisheye | `Fisheye Wide`, `Fisheye Extreme`, `Fisheye CRT`, `Peephole`, `Security Cam`, `Circular Fisheye`, `Fisheye Soft`, `Dashcam`, `Drone FPV`, `Skate Cam`, `Bubble Lens`, `Bug Eye`, `Cockpit Glass`, `Panoramic`, `Doorbell Cam` |
 | Anti-fisheye | `Anti-Fisheye Light`, `Anti-Fisheye Strong`, `Lens Correction`, `Anti-Fisheye Horizontal`, `Anti-Fisheye Corners`, `Ultrawide Correct`, `Pincushion Tube` |
 | Optics | `Sniper Scope`, `Scope Cam`, `Spotter Scope`, `Binoculars`, `Red Dot` |
-| Tactical | `Bodycam`, `Helmet Cam`, `Night Vision`, `Thermal`, `Breach`, `Chest Cam`, `Entry Team`, `Night Ops`, `White Phosphor`, `Flashbang`, `Evidence Cam`, `Shield Cam`, `Tac Light`, `Gas Mask`, `CS Gas`, `Suspect Cam`, `Under Door Cam`, `Stack Up`, `Concussion`, `IR Illuminator`, `Dispatch Feed`, `Interview Room`, `Taser Arc` |
-| Body-worn | `Action Cam`, `Duty Cam`, `Low Light Sensor`, `Cheap Sensor`, `Dirty Lens`, `Night Patrol` |
+| Tactical | `Night Vision`, `Thermal`, `Breach`, `Entry Team`, `Night Ops`, `White Phosphor`, `Flashbang`, `Evidence Cam`, `Shield Cam`, `Tac Light`, `Gas Mask`, `CS Gas`, `Suspect Cam`, `Under Door Cam`, `Stack Up`, `Concussion`, `IR Illuminator`, `Dispatch Feed`, `Interview Room`, `Taser Arc` |
+| Bodycam and GoPro | `GoPro Bodycam`, `Bodycam`, `Chest Cam`, `Helmet Cam`, `Action Cam`, `Duty Cam` |
+| Body-worn | `Low Light Sensor`, `Cheap Sensor`, `Dirty Lens`, `Night Patrol` |
 | Recon and drone | `Drone Feed`, `UAV Thermal`, `Black Hot`, `Ironbow`, `Recon Optic`, `Azure Recon`, `Sync Shot` |
 | Sensor | `Cross-Com`, `Magnetic View`, `Optical Camo`, `Warhound Feed`, `EMP Burst`, `Ghost Mode` |
 | Effect | `VHS`, `Projector`, `Film Grain`, `Prism Lens`, `Broken Signal` |
+
+> A seção **Bodycam and GoPro** junta as seis câmeras que antes estavam espalhadas entre
+> `Tactical` e `Body-worn`.
+>
+> **Nada nessa seção mexe o quadro e nada granula.** Grão, `Jitter` (o quadro inteiro
+> vagueando) e `Rolling Shutter` (o cisalhamento linha a linha) estão desligados nas seis: num
+> overlay que fica horas na tela, os três leem como efeito rodando por cima do jogo em vez de
+> filmagem. Todos os valores continuam guardados atrás do botão desligado, então dá para
+> religar qualquer um pelo painel sem re-ajustar nada.
+>
+> O look inteiro sai da óptica e da gradação — lente, vinheta, sujeira no vidro, cor. O
+> `GoPro Bodycam` é o mais próximo de *Ready or Not*. `Body-worn` fica com o que descreve
+> sensor e lente, não uma câmera presa em alguém.
 
 ### De onde vieram
 
@@ -263,8 +277,8 @@ overlay esteja capturando. Se você chegou aqui procurando um jogo específico:
 
 | Se você quer o clima de | Comece por |
 |---|---|
-| *Ready or Not* e afins | `Chest Cam`, `Entry Team`, `Stack Up`, `Night Ops`, `White Phosphor`, `IR Illuminator`, `Tac Light`, `Flashbang`, `Concussion`, `Gas Mask`, `CS Gas`, `Shield Cam`, `Under Door Cam`, `Taser Arc`, `Red Dot`, `Dispatch Feed`, `Interview Room` |
-| *Bodycam* e o gênero de filmagem corporal | `Action Cam`, `Duty Cam`, `Low Light Sensor`, `Cheap Sensor`, `Night Patrol` |
+| *Ready or Not* e afins | `GoPro Bodycam` (o mais próximo), `Chest Cam`, `Entry Team`, `Stack Up`, `Night Ops`, `White Phosphor`, `IR Illuminator`, `Tac Light`, `Flashbang`, `Concussion`, `Gas Mask`, `CS Gas`, `Shield Cam`, `Under Door Cam`, `Taser Arc`, `Red Dot`, `Dispatch Feed`, `Interview Room` |
+| *Bodycam* e o gênero de filmagem corporal | A seção **Bodycam and GoPro** inteira; depois `Low Light Sensor`, `Cheap Sensor`, `Night Patrol` |
 | *Ghost Recon* (Wildlands / Breakpoint) | `Drone Feed`, `UAV Thermal`, `Black Hot`, `Recon Optic`, `Azure Recon`, `Sync Shot`, `Ghost Mode` |
 | *Ghost Recon: Future Soldier* | `Cross-Com`, `Magnetic View`, `Optical Camo`, `Warhound Feed`, `EMP Burst` |
 

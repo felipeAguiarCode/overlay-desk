@@ -489,7 +489,7 @@ Aba **Presets**. Os arquivos ficam em `%APPDATA%\OverlayDesk\presets\*.json`.
 
 | Passo | Esperado |
 |---|---|
-| Primeira execução | Os 101 presets de fábrica são escritos; o log registra `Presets: wrote 101 built-in presets` |
+| Primeira execução | Os 102 presets de fábrica são escritos; o log registra `Presets: wrote 102 built-in presets` |
 | Deletar um preset e reabrir a aplicação | **Não** é recriado — deletar é definitivo |
 | **AT-013**: aplicar um preset, mexer nos sliders, reaplicar | Os valores salvos voltam exatamente |
 | Selecionar e `Apply` (ou duplo clique) | O overlay muda na hora, mesmo com a fonte parada |
@@ -505,15 +505,47 @@ Aba **Presets**. Os arquivos ficam em `%APPDATA%\OverlayDesk\presets\*.json`.
 | Atualizar de uma versão anterior | Os presets que já estavam no disco aparecem nas seções certas, mesmo sem o campo `category` no arquivo (recuperado pelo nome) |
 
 A linha **Current look** mostra `Neutral`, `Neutral (edited)` ou `Custom` conforme os
-parâmetros ao vivo batam ou não com o preset ativo. Aplicar qualquer um dos 101 tem de deixar
+parâmetros ao vivo batam ou não com o preset ativo. Aplicar qualquer um dos 102 tem de deixar
 essa linha mostrando o **nome**, nunca `Custom` — é isso que prova que `PresetMatches` cobre
-todo campo que os presets usam, inclusive os módulos do ADR-0009.
+todo campo que os presets usam, inclusive os módulos do ADR-0009 e o sharpen do ADR-0013.
+
+### GoPro Bodycam — ADR-0013
+
+O único preset que usa o `scope` como círculo de lente em vez de como óptica, então vale
+conferir à parte.
+
+| Passo | Esperado |
+|---|---|
+| Aplicar num overlay 16:9 | Os quatro cantos ficam **pretos e opacos**, com um arco visível; a imagem ainda encosta nas quatro bordas no meio de cada uma |
+| Redimensionar o overlay para 4:3 e para 21:9 | Continua sendo um corte de canto nos três formatos — nunca fecha num círculo com moldura preta em volta |
+| Passar o mouse sobre um canto preto com click-through ligado | O clique continua atravessando; o canto é opaco visualmente, não uma área que capture input |
+| Comparar com `Action Cam` | Aquele preenche o quadro inteiro; este tem o recorte. É a diferença que separa os dois |
+| Desligar só o `Scope` | Sobra o resto do look (barril, wash, grão) preenchendo o quadro |
+
+Para comparar com a filmagem que ele imita, sem precisar do app:
+
+```powershell
+.\build\tests\Release\OverlayDeskShaderTests.exe --write-presets-from <quadro.bmp> <pasta> "GoPro Bodycam"
+```
+
+O BMP de entrada tem de ser 24 ou 32 bits sem compressão, e a saída sai no mesmo tamanho — o
+aspecto importa, porque o tamanho da abertura é medido contra a distância até o canto.
 
 Um preset guarda **apenas filtros e efeitos**. Geometria da janela, target e FPS nunca
 entram nele (CONFIGURATION.md), então o mesmo arquivo funciona em outra máquina.
 
 O round-trip de todos os parâmetros, a tolerância a arquivo corrompido e a proteção contra
 `../` no nome são cobertos pelo teste automatizado `presets.repository`.
+
+### Seção Bodycam and GoPro
+
+| Passo | Esperado |
+|---|---|
+| Abrir a seção | Seis presets: `GoPro Bodycam`, `Bodycam`, `Chest Cam`, `Helmet Cam`, `Action Cam`, `Duty Cam` |
+| Aplicar qualquer um e olhar a aba Effects | **Nenhum efeito ligado** — nada de Noise, Jitter, Rolling Shutter, Shimmer, Scan Sweep ou Flicker |
+| Observar o overlay parado por 30 s com a fonte estática | A imagem **não** balança, não cisalha e não chia |
+| Abrir o card `Noise` e religar | Os parâmetros continuam lá (grainSize, speed, colorAmount) — desligar nunca perde ajuste |
+| Idem `Jitter` e `Rolling Shutter` | Mesma coisa |
 
 ## 16. Memória e estabilidade — RNF-002, AT-016
 

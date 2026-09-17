@@ -28,6 +28,9 @@ inline constexpr const char* kCategoryFisheye = "Fisheye";
 inline constexpr const char* kCategoryAntiFisheye = "Anti-fisheye";
 inline constexpr const char* kCategoryOptics = "Optics";
 inline constexpr const char* kCategoryTactical = "Tactical";
+// The cameras themselves. Kept apart from Body-worn, which is about sensor and lens
+// character rather than about a camera strapped to somebody.
+inline constexpr const char* kCategoryBodycamGoPro = "Bodycam and GoPro";
 inline constexpr const char* kCategoryBodyWorn = "Body-worn";
 inline constexpr const char* kCategoryRecon = "Recon and drone";
 inline constexpr const char* kCategorySensor = "Sensor";

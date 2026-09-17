@@ -680,14 +680,12 @@ Preset BodycamPreset() {
     p.filters.colorCorrection.tint[1] = 0.96f;
     p.filters.colorCorrection.tint[2] = 0.90f;
     p.filters.colorCorrection.tintAmount = 0.30f;
-    p.effects.noise.enabled = true;
     p.effects.noise.intensity = 0.16f;
     p.effects.noise.grainSize = 0.35f;
     p.effects.noise.speed = 0.80f;
     p.effects.noise.colorAmount = 0.25f;
     // The two artefacts that give a cheap body-worn camera away (ADR-0009): the sensor shears
     // when the wearer moves, and the front element is never clean.
-    p.effects.rollingShutter.enabled = true;
     p.effects.rollingShutter.intensity = 0.14f;
     p.effects.rollingShutter.speed = 0.45f;
     p.filters.lensDirt.enabled = true;
@@ -718,15 +716,12 @@ Preset HelmetCamPreset() {
     p.filters.colorCorrection.enabled = true;
     p.filters.colorCorrection.saturation = 0.80f;
     p.filters.colorCorrection.contrast = 1.20f;
-    p.effects.noise.enabled = true;
     p.effects.noise.intensity = 0.18f;
     p.effects.noise.grainSize = 0.30f;
     p.effects.noise.speed = 0.85f;
-    p.effects.jitter.enabled = true;
     p.effects.jitter.intensity = 0.08f;
     p.effects.jitter.speed = 0.55f;
     // Harder shear than the chest mount: a head moves faster and stops more abruptly.
-    p.effects.rollingShutter.enabled = true;
     p.effects.rollingShutter.intensity = 0.24f;
     p.effects.rollingShutter.speed = 0.62f;
     p.filters.lensDirt.enabled = true;
@@ -988,12 +983,10 @@ Preset ChestCamPreset() {
     p.filters.lensDirt.intensity = 0.24f;
     p.filters.lensDirt.density = 0.50f;
     p.filters.lensDirt.smear = 0.45f;
-    p.effects.noise.enabled = true;
     p.effects.noise.intensity = 0.15f;
     p.effects.noise.grainSize = 0.35f;
     p.effects.noise.speed = 0.80f;
     p.effects.noise.colorAmount = 0.22f;
-    p.effects.rollingShutter.enabled = true;
     p.effects.rollingShutter.intensity = 0.18f;
     p.effects.rollingShutter.speed = 0.50f;
     return p;
@@ -1315,10 +1308,8 @@ Preset ActionCamPreset() {
     p.filters.bloom.enabled = true;
     p.filters.bloom.intensity = 0.28f;
     p.filters.bloom.threshold = 0.72f;
-    p.effects.rollingShutter.enabled = true;
     p.effects.rollingShutter.intensity = 0.26f;
     p.effects.rollingShutter.speed = 0.68f;
-    p.effects.noise.enabled = true;
     p.effects.noise.intensity = 0.09f;
     p.effects.noise.grainSize = 0.40f;
     return p;
@@ -1349,12 +1340,10 @@ Preset DutyCamPreset() {
     p.filters.bloom.enabled = true;
     p.filters.bloom.intensity = 0.24f;
     p.filters.bloom.threshold = 0.70f;
-    p.effects.noise.enabled = true;
     p.effects.noise.intensity = 0.14f;
     p.effects.noise.grainSize = 0.34f;
     p.effects.noise.speed = 0.82f;
     p.effects.noise.colorAmount = 0.25f;
-    p.effects.rollingShutter.enabled = true;
     p.effects.rollingShutter.intensity = 0.17f;
     p.effects.rollingShutter.speed = 0.52f;
     return p;
@@ -1470,6 +1459,94 @@ Preset NightPatrolPreset() {
     p.effects.noise.grainSize = 0.26f;
     p.effects.noise.speed = 0.90f;
     p.effects.noise.colorAmount = 0.45f;
+    return p;
+}
+
+Preset GoProBodycamPreset() {
+    // The action camera with its own lens circle showing. What separates this from Action Cam
+    // is the crop: an ultra-wide lens does not project a circle big enough to fill a 16:9
+    // sensor, so the four corners fall outside the image it forms and read as black. Every
+    // other module here is in service of that one fact - this is a camera looking through a
+    // small piece of glass, not a picture with a filter on it.
+    Preset p = MakeBuiltIn("GoPro Bodycam");
+
+    p.filters.distortion.enabled = true;
+    p.filters.distortion.amount = 0.85f;
+    p.filters.distortion.shape = DistortionShape::Radial;
+
+    // The porthole, and the reason this preset exists. `size` is a fraction of the distance to
+    // the corner, so anything above roughly 0.87 on a 16:9 overlay still lets the picture touch
+    // all four edges at their midpoints and cuts only the corners - which is exactly what the
+    // reference footage shows. Below that it would close into a circle in the middle of a black
+    // frame, which is a peephole and a different preset. The threshold moves with the aspect
+    // ratio (0.80 at 4:3, 0.92 at 21:9) and 0.94 clears all three.
+    p.filters.scope.enabled = true;
+    p.filters.scope.shape = ScopeShape::Circle;
+    p.filters.scope.size = 0.94f;
+    p.filters.scope.softness = 0.03f;
+    p.filters.scope.magnification = 1.0f;
+    p.filters.scope.reticle = 0.0f;
+
+    // Soft corners and a sharpened middle, which is the pair that reads as a small sensor
+    // behind a wide lens. Either one alone reads as a mistake.
+    p.filters.lensSoftness.enabled = true;
+    p.filters.lensSoftness.intensity = 0.45f;
+    p.filters.lensSoftness.center = 0.40f;
+    p.filters.sharpen.enabled = true;
+    p.filters.sharpen.intensity = 0.52f;
+    p.filters.sharpen.radius = 0.35f;
+
+    p.filters.chromaticAberration.enabled = true;
+    p.filters.chromaticAberration.intensity = 0.16f;
+    p.filters.chromaticAberration.mode = ChromaticAberrationMode::Barrel;
+
+    // A low threshold on purpose: the veiling glare in this footage is not a halo around a
+    // lamp, it is the whole picture going slightly milky whenever a window is in frame.
+    p.filters.bloom.enabled = true;
+    p.filters.bloom.intensity = 0.32f;
+    p.filters.bloom.threshold = 0.62f;
+    p.filters.bloom.radius = 0.36f;
+
+    // Desaturated, cold, and contrastier than it was. With the grain gone the picture has
+    // nothing breaking up its flat areas, so it needs the tonal separation to stop reading as a
+    // clean render with a lens bent over it. Blacks sit down rather than lifted: a tactical
+    // interior is lit by windows and practicals with a lot of nothing in between.
+    p.filters.colorCorrection.enabled = true;
+    p.filters.colorCorrection.saturation = 0.78f;
+    p.filters.colorCorrection.brightness = 0.01f;
+    p.filters.colorCorrection.contrast = 1.20f;
+    p.filters.colorCorrection.gamma = 0.98f;
+    p.filters.colorCorrection.tint[0] = 0.92f;
+    p.filters.colorCorrection.tint[1] = 0.96f;
+    p.filters.colorCorrection.tint[2] = 1.00f;
+    p.filters.colorCorrection.tintAmount = 0.38f;
+
+    // Inside the aperture, not instead of it: the picture is already dimming well before it
+    // reaches the black corners.
+    p.filters.vignette.enabled = true;
+    p.filters.vignette.intensity = 0.52f;
+    p.filters.vignette.size = 0.70f;
+    p.filters.vignette.softness = 0.66f;
+    p.filters.vignette.roundness = 0.85f;
+
+    p.filters.lensDirt.enabled = true;
+    p.filters.lensDirt.intensity = 0.20f;
+    p.filters.lensDirt.density = 0.40f;
+    p.filters.lensDirt.smear = 0.50f;
+
+    // Grain and shear are both off. They are the two things that read as an effect rather
+    // than as footage, and without them the optics and the grade carry the look on their own.
+    // The values stay dialled in so either can be switched back on from the panel.
+    p.effects.noise.intensity = 0.14f;
+    p.effects.noise.grainSize = 0.34f;
+    p.effects.noise.speed = 0.85f;
+    p.effects.noise.colorAmount = 0.25f;
+
+    p.effects.rollingShutter.intensity = 0.18f;
+    p.effects.rollingShutter.speed = 0.55f;
+
+    // Jitter stays off too. On an overlay that is up for hours a wandering frame wears thin
+    // fast, and Helmet Cam is already the one for a camera on someone who is moving.
     return p;
 }
 
@@ -2773,7 +2850,7 @@ Preset ProjectionTvPreset() {
 
 std::vector<Preset> BuiltInPresets() {
     std::vector<Preset> presets;
-    presets.reserve(112);
+    presets.reserve(113);
 
     // The category is stamped here rather than inside each preset function: the families were
     // already the organising principle of this file, and grouping them once means a preset
@@ -2815,15 +2892,30 @@ std::vector<Preset> BuiltInPresets() {
                              BinocularsPreset(), RedDotPreset()});
 
     family(kCategoryTactical,
-           {BodycamPreset(), HelmetCamPreset(), NightVisionPreset(), ThermalPreset(),
-            BreachPreset(), ChestCamPreset(), EntryTeamPreset(), NightOpsPreset(),
-            WhitePhosphorPreset(), FlashbangPreset(), EvidenceCamPreset(), ShieldCamPreset(),
-            TacLightPreset(), GasMaskPreset(), CsGasPreset(), SuspectCamPreset(),
-            UnderDoorCamPreset(), StackUpPreset(), ConcussionPreset(), IrIlluminatorPreset(),
-            DispatchFeedPreset(), InterviewRoomPreset(), TaserArcPreset()});
+           {NightVisionPreset(), ThermalPreset(), BreachPreset(), EntryTeamPreset(),
+            NightOpsPreset(), WhitePhosphorPreset(), FlashbangPreset(), EvidenceCamPreset(),
+            ShieldCamPreset(), TacLightPreset(), GasMaskPreset(), CsGasPreset(),
+            SuspectCamPreset(), UnderDoorCamPreset(), StackUpPreset(), ConcussionPreset(),
+            IrIlluminatorPreset(), DispatchFeedPreset(), InterviewRoomPreset(),
+            TaserArcPreset()});
 
-    family(kCategoryBodyWorn, {ActionCamPreset(), DutyCamPreset(), LowLightSensorPreset(),
-                               CheapSensorPreset(), DirtyLensPreset(), NightPatrolPreset()});
+    // The six actual cameras, in one place. They were split between Tactical and Body-worn,
+    // which meant the look this product gets asked for most was scattered across two headings
+    // among two dozen presets that have nothing to do with it.
+    //
+    // Nothing in this family moves the frame, and nothing in it grains. Jitter wanders the
+    // whole picture, rolling shutter shears it line by line, and grain crawls over it - on an
+    // overlay that stays up for hours all three read as an effect running on top of the game
+    // rather than as footage, and they are the first things anyone asks to turn off.
+    //
+    // Every parameter is left dialled in behind the disabled flag, so any of them can be
+    // switched back on from the panel without being re-tuned (FILTERS-AND-EFFECTS.md 5).
+    family(kCategoryBodycamGoPro,
+           {GoProBodycamPreset(), BodycamPreset(), ChestCamPreset(), HelmetCamPreset(),
+            ActionCamPreset(), DutyCamPreset()});
+
+    family(kCategoryBodyWorn, {LowLightSensorPreset(), CheapSensorPreset(), DirtyLensPreset(),
+                               NightPatrolPreset()});
 
     family(kCategoryRecon, {DroneFeedPreset(), UavThermalPreset(), BlackHotPreset(),
                             IronbowPreset(), ReconOpticPreset(), AzureReconPreset(),
@@ -2844,8 +2936,8 @@ int PresetCategoryRank(std::string_view category) noexcept {
     // includes Custom - sorts last.
     constexpr std::string_view kOrder[] = {
         kCategoryBase,     kCategoryCrt,      kCategoryConsoles, kCategoryFisheye,
-        kCategoryAntiFisheye, kCategoryOptics, kCategoryTactical, kCategoryBodyWorn,
-        kCategoryRecon,    kCategorySensor,   kCategoryEffect,
+        kCategoryAntiFisheye, kCategoryOptics, kCategoryTactical, kCategoryBodycamGoPro,
+        kCategoryBodyWorn, kCategoryRecon,  kCategorySensor,   kCategoryEffect,
     };
 
     int rank = static_cast<int>(std::size(kOrder)) + 1;
@@ -2939,6 +3031,9 @@ bool PresetMatches(const Preset& preset, const FilterSettings& f,
     }
     if (!SameBase(p.lensSoftness, f.lensSoftness) ||
         !NearlyEqual(p.lensSoftness.center, f.lensSoftness.center)) {
+        return false;
+    }
+    if (!SameBase(p.sharpen, f.sharpen) || !NearlyEqual(p.sharpen.radius, f.sharpen.radius)) {
         return false;
     }
     if (!SameBase(p.scope, f.scope) || p.scope.shape != f.scope.shape ||
