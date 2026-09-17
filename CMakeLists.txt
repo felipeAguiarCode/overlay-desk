@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 project(OverlayDesk
-    VERSION 1.0.0
+    VERSION 1.1.0
     DESCRIPTION "Overlay Desk - GPU-first window overlay with realtime filters"
     LANGUAGES CXX)
 

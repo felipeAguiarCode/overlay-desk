@@ -16,9 +16,10 @@ processa na GPU e desenha o resultado numa janela própria e independente.
 Windows 10 1903+ · GPU com Direct3D 11 · zip de ~800 KB · sem instalador e sem Visual C++
 Redistributable.
 
-Versão 1.0.0: todas as features do MVP estão implementadas e os testes automatizados passam.
-A corrida de 60 minutos do teste de estabilidade ainda não foi fechada — acompanhe em
-`docs/planning/BACKLOG.md`.
+Versão 1.1.0: entraram o filtro Sharpen, o preset `GoPro Bodycam` e um aviso que diz quando a
+janela de origem não está mandando frame. Todas as features do MVP estão implementadas e os
+testes automatizados passam. A corrida de 60 minutos do teste de estabilidade ainda não foi
+fechada — acompanhe em `docs/planning/BACKLOG.md`.
 
 ## Download
 
