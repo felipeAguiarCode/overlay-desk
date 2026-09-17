@@ -35,6 +35,7 @@ enum ShaderFeature : uint32_t {
     ShaderFeatureRollingShutter = 1u << 17,
     ShaderFeatureScanSweep = 1u << 18,
     ShaderFeatureLensSoftness = 1u << 19,
+    ShaderFeatureSharpen = 1u << 20,
 };
 
 // Byte-for-byte mirror of the ShaderConstants cbuffer in shaders/Common.hlsli. HLSL packs
@@ -145,9 +146,14 @@ struct alignas(16) ShaderConstants {
 
     float bloomTint[3]{1.0f, 1.0f, 1.0f};
     float scanlineInterlace = 0.0f;
+
+    float sharpenIntensity = 0.0f;
+    float sharpenRadius = 0.35f;
+    float sharpenPad0 = 0.0f;
+    float sharpenPad1 = 0.0f;
 };
 
-static_assert(sizeof(ShaderConstants) == 368,
+static_assert(sizeof(ShaderConstants) == 384,
               "ShaderConstants must match the cbuffer layout in shaders/Common.hlsli");
 static_assert(sizeof(ShaderConstants) % 16 == 0,
               "D3D11 constant buffers must be a multiple of 16 bytes");

@@ -392,6 +392,25 @@ resultado processado. Se saísse do resultado, ligar scanlines encheria a tela d
 | `Smear` mínimo → máximo | Pontos redondos → riscos alongados na vertical |
 | Redimensionar o overlay | As manchas acompanham a janela sem esticar de forma anisotrópica |
 
+### Sharpen — ADR-0013
+
+| Passo | Esperado |
+|---|---|
+| Desligado | Imagem idêntica à original |
+| Ligado num alvo com texto ou bordas duras | Contornos ganham um halo claro do lado claro e escuro do lado escuro — o crunch de câmera de ação |
+| `Radius` mínimo → máximo | Halo fino colado na borda → halo largo e evidente |
+| Numa fonte com letterbox (overlay 21:9, fonte 16:9) | **Nenhuma linha brilhante** na fronteira entre a imagem e as barras |
+| Ligado junto com `Lens Softness` | Cantos moles e meio afiado ao mesmo tempo; um não desfaz o outro |
+| Mexer em `Contrast` da Color Correction | A espessura do halo **não** muda — o sharpen vem antes da gradação |
+| Redimensionar o overlay | A espessura do halo acompanha a janela em proporção, não em pixels (AT-007) |
+| Ligar `Noise` por cima | O grão **não** é afiado — as bordas saem da textura capturada, não do resultado |
+
+A fronteira com o letterbox é o caso que mais importa: quatro das cinco amostras ainda caem na
+imagem ali e a quinta não, e uma média que não ponderasse por cobertura leria preto na que
+falta e desenharia uma moldura acesa em volta do conteúdo. Está preso por
+`TestSharpenDoesNotRimTheContentEdge`, que reprova com 127 níveis de diferença se a ponderação
+sair.
+
 ## 14. Glitch — AT-012
 
 Aba **Effects**. O glitch é procedural e dirigido por `g_time`: nenhum frame anterior é

@@ -266,6 +266,11 @@ inline void ReadFilters(const json& filters, FilterSettings& out) {
         Read(*n, "center", out.lensSoftness.center);
         out.lensSoftness.center = ClampIntensity(out.lensSoftness.center);
     }
+    if (const json* n = Child(filters, "sharpen"); n != nullptr) {
+        ReadFilterBase(*n, out.sharpen);
+        Read(*n, "radius", out.sharpen.radius);
+        out.sharpen.radius = ClampIntensity(out.sharpen.radius);
+    }
     if (const json* n = Child(filters, "lensDirt"); n != nullptr) {
         ReadFilterBase(*n, out.lensDirt);
         Read(*n, "density", out.lensDirt.density);
@@ -358,6 +363,11 @@ inline json SerializeFilters(const FilterSettings& s) {
         json& n = filters["lensSoftness"];
         WriteFilterBase(n, s.lensSoftness);
         n["center"] = Num(s.lensSoftness.center);
+    }
+    {
+        json& n = filters["sharpen"];
+        WriteFilterBase(n, s.sharpen);
+        n["radius"] = Num(s.sharpen.radius);
     }
     {
         json& n = filters["lensDirt"];

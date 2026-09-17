@@ -347,7 +347,40 @@ levemente mole, o quadrado mantém o centro intocado.
 Seis amostras num anel. É um amolecimento de baixa frequência, não um bokeh, e aplicado **antes**
 do bloom — o desfoque acontece na lente, o florescimento no sensor atrás dela. Ver ADR-0011.
 
-### 2.9 False Colour
+### 2.9 Sharpen
+
+#### Objetivo
+
+O crunch que uma câmera de ação aplica na própria imagem. Um sensor pequeno atrás de uma lente
+muito aberta resolve mal, e o ISP responde com um unsharp mask agressivo — forte o bastante para
+que o halo em volta de uma borda de alto contraste apareça. Esse halo é tão característico do
+formato quanto o barril.
+
+#### Parâmetros
+
+```text
+enabled
+intensity
+radius
+```
+
+`radius` é a distância das amostras, como fração do quadro, e portanto a espessura do halo.
+
+#### Implementação
+
+Unsharp mask de quatro amostras numa cruz. O high-pass sai da **textura de origem**, não do
+resultado já processado — este último carrega grão, scanlines e vinheta, e a derivada acharia as
+bordas desses padrões. Amostra fora do conteúdo é ponderada por cobertura: sem isso a média
+leria preto na fronteira do letterbox e a borda do conteúdo viraria uma linha brilhante.
+
+Aplicado **depois** do bloom e **antes** de qualquer gradação: a lente desfoca, o sensor
+floresce com a luz que chegou, o ISP afia o que leu, e só então a imagem é gradada. Afiar depois
+da correção de cor faria a espessura do halo depender do contraste e da gama. Ver ADR-0013.
+
+Combina com `lensSoftness`: cantos moles e um meio afiado é o que um sensor pequeno atrás de uma
+lente muito aberta produz.
+
+### 2.10 False Colour
 
 #### Objetivo
 
@@ -385,7 +418,7 @@ como o display de poucos bits de um equipamento de campo.
 expressável por multiplicação, que é tudo que a tinta faz. E a paleta precisa vir depois de
 toda a correção de cor, inclusive da tinta. Ver ADR-0009 §4.
 
-### 2.10 Edge Glow
+### 2.11 Edge Glow
 
 #### Objetivo
 
@@ -412,7 +445,7 @@ carrega scanlines, grão e vinheta, e a detecção acharia as bordas desses padr
 conteúdo. O contorno é somado por cima, depois da false colour, para que a paleta térmica não
 o recolora.
 
-### 2.11 Lens Dirt
+### 2.12 Lens Dirt
 
 #### Objetivo
 
@@ -599,6 +632,7 @@ display, então respira com ele.
  7. chromatic aberration
  7b. lens softness
  8. bloom
+ 8b. sharpen
  9. color correction
 10. false colour
 11. edge glow
@@ -613,8 +647,8 @@ display, então respira com ele.
 
 Os seis estágios originais (5 a 7, 9, 13 e 14) mantêm a ordem relativa que o ADR-0003 fixou. Os
 estágios novos foram acrescentados, nunca inseridos entre dois existentes de forma que
-alterasse a relação entre eles. Justificativa de cada posição: ADR-0007, ADR-0008, ADR-0009 e
-ADR-0011.
+alterasse a relação entre eles. Justificativa de cada posição: ADR-0007, ADR-0008, ADR-0009,
+ADR-0011 e ADR-0013.
 
 ## 5. Estado desligado
 
@@ -677,6 +711,11 @@ Lens Softness
 enabled=false
 intensity=0.40
 center=0.45
+
+Sharpen
+enabled=false
+intensity=0.35
+radius=0.35
 
 Bloom
 enabled=false

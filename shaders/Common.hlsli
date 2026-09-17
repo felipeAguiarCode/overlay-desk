@@ -32,6 +32,7 @@
 #define FEATURE_ROLLING_SHUTTER   (1u << 17)
 #define FEATURE_SCAN_SWEEP        (1u << 18)
 #define FEATURE_LENS_SOFTNESS     (1u << 19)
+#define FEATURE_SHARPEN           (1u << 20)
 
 #define SCOPE_CIRCLE      0u
 #define SCOPE_BINOCULAR   1u
@@ -189,6 +190,11 @@ cbuffer ShaderConstants : register(b0)
 
     float3 g_bloomTint;
     float  g_scanlineInterlace;
+
+    float  g_sharpenIntensity;
+    float  g_sharpenRadius;
+    float  g_sharpenPad0;
+    float  g_sharpenPad1;
 };
 
 Texture2D<float4> g_source : register(t0);

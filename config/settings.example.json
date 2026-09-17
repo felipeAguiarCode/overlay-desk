@@ -100,6 +100,11 @@
       "intensity": 0.4,
       "center": 0.45
     },
+    "sharpen": {
+      "enabled": false,
+      "intensity": 0.35,
+      "radius": 0.35
+    },
     "lensDirt": {
       "enabled": false,
       "intensity": 0.25,

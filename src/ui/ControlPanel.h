@@ -118,6 +118,7 @@ private:
     bool m_advancedEdgeGlow = false;
     bool m_advancedLensDirt = false;
     bool m_advancedLensSoftness = false;
+    bool m_advancedSharpen = false;
     bool m_advancedGlitch = false;
     bool m_advancedNoise = false;
     bool m_advancedFlicker = false;

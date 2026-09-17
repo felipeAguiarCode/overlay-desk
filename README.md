@@ -68,7 +68,7 @@ troque-a na aba Hotkeys; os botões do painel continuam funcionando.
 
 **Filters** — transformam a imagem de forma constante: Distortion (bipolar, de anti-fisheye a
 fisheye), Chromatic Aberration, Color Correction, Scanlines, Vignette, Lens Softness, Bloom,
-False Colour, Edge Glow, Lens Dirt, Scope.
+Sharpen, False Colour, Edge Glow, Lens Dirt, Scope.
 
 **Effects** — mudam com o tempo, todos procedurais e sem guardar frame anterior: Jitter,
 Shimmer, Rolling Shutter, Glitch, Scan Sweep, Noise, Flicker.

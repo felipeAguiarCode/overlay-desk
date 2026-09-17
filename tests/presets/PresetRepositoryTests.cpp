@@ -130,6 +130,10 @@ Preset MakeDistinctivePreset(std::string name) {
     p.filters.lensSoftness.intensity = 0.67f;
     p.filters.lensSoftness.center = 0.21f;
 
+    p.filters.sharpen.enabled = true;
+    p.filters.sharpen.intensity = 0.73f;
+    p.filters.sharpen.radius = 0.19f;
+
     p.effects.glitch.enabled = true;
     p.effects.glitch.intensity = 0.66f;
     p.effects.glitch.frequency = 0.21f;
@@ -247,6 +251,10 @@ void ExpectSame(const Preset& expected, const Preset& actual) {
     CHECK(e.lensSoftness.enabled == a.lensSoftness.enabled);
     CHECK(Near(e.lensSoftness.intensity, a.lensSoftness.intensity));
     CHECK(Near(e.lensSoftness.center, a.lensSoftness.center));
+
+    CHECK(e.sharpen.enabled == a.sharpen.enabled);
+    CHECK(Near(e.sharpen.intensity, a.sharpen.intensity));
+    CHECK(Near(e.sharpen.radius, a.sharpen.radius));
 
     CHECK(e.lensDirt.enabled == a.lensDirt.enabled);
     CHECK(Near(e.lensDirt.intensity, a.lensDirt.intensity));
@@ -368,6 +376,10 @@ void TestMatchDetectsEdits() {
 
     filters = preset.filters;
     filters.lensSoftness.center += 0.05f;
+    CHECK(!PresetMatches(preset, filters, effects));
+
+    filters = preset.filters;
+    filters.sharpen.radius += 0.05f;
     CHECK(!PresetMatches(preset, filters, effects));
 
     filters = preset.filters;

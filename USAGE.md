@@ -142,6 +142,12 @@ Desligar um filtro **não** perde os valores que você ajustou.
   Em `Advanced`, **`Halo colour`** multiplica o halo. Branco deixa a cor da luz que o produziu;
   esquentar é como se chega à **halation** — a luz que espalha dentro do vidro de um tubo volta
   avermelhada, e é por isso que um realce branco num CRT tem borda quente.
+- **Sharpen** — o crunch que uma câmera de ação aplica na própria imagem. Um sensor pequeno
+  atrás de uma lente muito aberta resolve mal, e o processador responde com um unsharp mask
+  agressivo, forte o bastante para o halo em volta de uma borda de alto contraste aparecer.
+  `Radius` é até onde esse halo chega. Ligue junto com o Lens Softness: cantos moles e um meio
+  afiado é exatamente o que esse tipo de câmera produz. As bordas saem da imagem capturada, não
+  do resultado já processado, então o grão e as scanlines nunca são afiados junto.
 - **False Colour** — mapeia o brilho para uma paleta, que é o que uma mira térmica realmente
   faz. `White hot`, `Black hot` (quente lê escuro, mais fácil de achar uma silhueta),
   `Ironbow` (preto → roxo → vermelho → laranja → branco), `Phosphor green` e `White phosphor`

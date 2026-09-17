@@ -4,11 +4,13 @@
 //
 // ADR-0003 forbids intermediate render targets, so the whole chain runs here in one pass over
 // the captured texture. ADR-0007, ADR-0008, ADR-0009 and ADR-0011 extend the original six
-// stages; the relative order of those six is unchanged throughout:
+// stages, and ADR-0013 adds the sharpen; the relative order of those six is unchanged
+// throughout:
 //
 //     Captured Texture -> Scope Zoom -> Jitter UV -> Shimmer UV -> Rolling Shutter UV
 //                      -> Glitch UV -> Distortion -> Chromatic Aberration -> Lens Softness
-//                      -> Bloom -> Color Correction -> False Colour -> Edge Glow -> Noise
+//                      -> Bloom -> Sharpen -> Color Correction -> False Colour -> Edge Glow
+//                      -> Noise
 //                      -> Scanlines -> Vignette -> Lens Dirt -> Scan Sweep -> Flicker
 //                      -> Scope Mask -> Output
 //
@@ -828,6 +830,77 @@ float3 ApplyLensSoftness(float3 color, float2 uv)
     return result;
 }
 
+// --- 19. Sharpen (ADR-0013) -----------------------------------------------------------------
+//
+// The crunch an action camera puts on its own footage. A small sensor behind a very wide lens
+// resolves badly, and every one of these cameras answers that with an aggressive unsharp mask
+// in the ISP - hard enough that the halo around a high-contrast edge is visible. That halo is
+// as much a part of the look as the barrel is, and no combination of the existing modules
+// produces it: sharpening is a spatial derivative added back, not a tonal adjustment.
+//
+// Runs after the bloom and before any grading. The chain is physical: the lens defocuses
+// (lens softness), the sensor blooms with the light that reached it (bloom), the ISP sharpens
+// what it read, and only then is the picture graded.
+//
+// The high-pass comes from the SOURCE texture rather than from the running colour, for the same
+// reason ADR-0009 gives for the edge glow: the running colour would already carry grain,
+// scanlines and vignette by the time a later stage looked at it, and a derivative would find
+// the edges of those patterns instead of the ones in the picture.
+//
+// Four taps on a cross. An unsharp mask needs a local mean, not a smooth blur, and a cross is
+// the cheapest thing that gives one without a directional bias.
+
+static const uint kSharpenTaps = 4u;
+
+float3 ApplySharpen(float3 color, float2 uv)
+{
+    float3 result = color;
+
+    if (FeatureEnabled(FEATURE_SHARPEN))
+    {
+        const float amount = saturate(g_sharpenIntensity);
+        if (amount > 0.0)
+        {
+            // Normalised units, aspect-corrected, so resizing the overlay never changes how
+            // thick the halo is (AT-007).
+            const float2 aspect =
+                float2(g_outputResolution.y / max(g_outputResolution.x, 1.0), 1.0);
+            const float spread = lerp(0.0006, 0.0035, saturate(g_sharpenRadius));
+
+            const float4 centre = SampleSourceTap(uv);
+
+            float3 accumulated = 0.0;
+            float weight = 0.0;
+
+            [unroll]
+            for (uint i = 0u; i < kSharpenTaps; ++i)
+            {
+                const float angle = (float)i * (kTau / (float)kSharpenTaps);
+                const float2 offset = float2(cos(angle), sin(angle)) * spread * aspect;
+
+                const float4 tap = SampleSourceTap(uv + offset);
+                accumulated += tap.rgb * tap.w;
+                weight += tap.w;
+            }
+
+            // Weighting by coverage is what keeps the mean honest at the letterbox edge. An
+            // unweighted average would read black out there, the high-pass would go strongly
+            // positive, and the border would light up as a bright rim (ADR-0011 makes the same
+            // point about the softness ring).
+            const float3 blurred = accumulated / max(weight, 1e-6);
+            const float3 highPass = centre.rgb - blurred;
+
+            // 2.5 so that 100% on the slider reaches a visibly over-sharpened image instead of
+            // leaving the useful range squeezed into the top of the travel. Clamping at zero
+            // keeps the dark side of the halo from going negative; the bright side is allowed
+            // to overshoot, because that overshoot is the artefact being reproduced.
+            result = max(color + highPass * amount * 2.5 * centre.w, 0.0);
+        }
+    }
+
+    return result;
+}
+
 // --- 14. False colour ---------------------------------------------------------------------------
 //
 // Luminance mapped onto a palette. ADR-0009 section 4: this is the operation a tint cannot
@@ -1225,10 +1298,12 @@ float4 main(PixelInput input) : SV_Target
         color = SampleSource(uv, coverage);
         alpha = coverage;
 
-        // Both need taps of the source, so they can only run where the source exists. The
-        // softness is the lens and the bloom is the sensor behind it, in that order.
+        // All three need taps of the source, so they can only run where the source exists,
+        // and the order is the physical one: the softness is the lens, the bloom is the sensor
+        // behind it, and the sharpen is the processor deciding what to do with what it read.
         color = ApplyLensSoftness(color, uv);
         color = ApplyBloom(color, uv);
+        color = ApplySharpen(color, uv);
 
         // Outside the frame we are in a letterbox bar. Leaving it fully transparent lets
         // whatever is underneath show through, which reads better over an emulator than black

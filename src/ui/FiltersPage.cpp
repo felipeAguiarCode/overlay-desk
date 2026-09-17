@@ -29,6 +29,7 @@ const FalseColourSettings kFalseColourDefaults;
 const EdgeGlowSettings kEdgeGlowDefaults;
 const LensDirtSettings kLensDirtDefaults;
 const LensSoftnessSettings kLensSoftnessDefaults;
+const SharpenSettings kSharpenDefaults;
 
 constexpr const char* kDistortionShapes[] = {"Radial", "CRT (per axis)", "Cylindrical",
                                              "Vertical", "Corner only"};
@@ -430,6 +431,41 @@ bool DrawLensSoftness(LensSoftnessSettings& s, bool& advancedOpen) {
     return changed;
 }
 
+// --- Sharpen (ADR-0013) --------------------------------------------------------------------
+
+bool DrawSharpen(SharpenSettings& s, bool& advancedOpen) {
+    bool reset = false;
+    bool changed = widgets::BeginModuleCard("SHARPEN", &s.enabled, &reset);
+    if (reset) {
+        s = kSharpenDefaults;
+        changed = true;
+    }
+
+    ImGui::BeginDisabled(!s.enabled);
+    changed |= widgets::PercentSlider("Intensity", &s.intensity, kSharpenDefaults.intensity);
+    changed |= widgets::PercentSlider("Radius", &s.radius, kSharpenDefaults.radius);
+    widgets::HelpText(
+        "The crunch a camera puts on its own footage. An action cam resolves badly through a "
+        "very wide lens and answers that with an aggressive unsharp mask, hard enough that the "
+        "halo around a high-contrast edge shows. `Radius` is how far the halo reaches. Pair it "
+        "with Lens Softness: soft corners and a sharpened middle is what the format looks "
+        "like.");
+
+    if (widgets::BeginAdvanced("adv", &advancedOpen)) {
+        widgets::HelpText(
+            "Four samples on a cross, read from the captured texture rather than from the "
+            "running image, so it finds edges in the picture instead of edges in the grain and "
+            "the scanlines. Applied after Bloom and before any grading: the lens defocuses, "
+            "the sensor blooms, the ISP sharpens what it read, and only then is the picture "
+            "graded.");
+        widgets::EndAdvanced();
+    }
+
+    ImGui::EndDisabled();
+    widgets::EndModuleCard();
+    return changed;
+}
+
 // --- Lens dirt (ADR-0009) ------------------------------------------------------------------
 
 bool DrawLensDirt(LensDirtSettings& s, bool& advancedOpen) {
@@ -518,6 +554,7 @@ void ControlPanel::DrawFiltersPage(AppState& state, const PanelActions& actions)
         filters.edgeGlow.enabled = false;
         filters.lensDirt.enabled = false;
         filters.lensSoftness.enabled = false;
+        filters.sharpen.enabled = false;
         state.settingsDirty = true;
         if (actions.refreshOverlay) {
             actions.refreshOverlay();
@@ -546,6 +583,7 @@ void ControlPanel::DrawFiltersPage(AppState& state, const PanelActions& actions)
     changed |= DrawChromatic(filters.chromaticAberration, m_advancedChromatic);
     changed |= DrawLensSoftness(filters.lensSoftness, m_advancedLensSoftness);
     changed |= DrawBloom(filters.bloom, m_advancedBloom);
+    changed |= DrawSharpen(filters.sharpen, m_advancedSharpen);
     changed |= DrawColorCorrection(filters.colorCorrection, m_advancedColor);
     changed |= DrawFalseColour(filters.falseColour, m_advancedFalseColour);
     changed |= DrawEdgeGlow(filters.edgeGlow, m_advancedEdgeGlow);

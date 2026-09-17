@@ -131,6 +131,12 @@ ShaderConstants BuildShaderConstants(const AppSettings& settings, uint32_t outpu
     c.lensSoftnessIntensity = ClampIntensity(f.lensSoftness.intensity);
     c.lensSoftnessCenter = ClampIntensity(f.lensSoftness.center);
 
+    if (f.sharpen.enabled) {
+        mask |= ShaderFeatureSharpen;
+    }
+    c.sharpenIntensity = ClampIntensity(f.sharpen.intensity);
+    c.sharpenRadius = ClampIntensity(f.sharpen.radius);
+
     if (f.lensDirt.enabled) {
         mask |= ShaderFeatureLensDirt;
     }

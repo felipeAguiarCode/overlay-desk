@@ -13,9 +13,11 @@
 
 #include <d3d11.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <iterator>
 #include <vector>
@@ -347,6 +349,66 @@ Image MakeGridSource(uint32_t width, uint32_t height) {
 // 24-bit bottom-up BMP, the format that needs no library. The frame is composited over `bg`
 // first: the output is premultiplied alpha, so a letterbox bar is all zeroes and would be
 // indistinguishable from black without something behind it.
+// Reads a 24- or 32-bit uncompressed BMP so a look can be judged against real footage instead
+// of against the synthetic grid. Only the shapes WriteBmp itself emits, plus the 32-bit variant
+// most tools save: this exists to close the loop on --write-presets, not to be an image library.
+bool ReadBmp(const char* path, Image& out) {
+    bool ok = false;
+
+    std::FILE* file = nullptr;
+    if (fopen_s(&file, path, "rb") == 0 && file != nullptr) {
+        uint8_t header[54]{};
+        if (std::fread(header, 1, sizeof(header), file) == sizeof(header) && header[0] == 'B' &&
+            header[1] == 'M') {
+            const auto u32 = [&header](size_t at) {
+                return static_cast<uint32_t>(header[at]) |
+                       (static_cast<uint32_t>(header[at + 1]) << 8) |
+                       (static_cast<uint32_t>(header[at + 2]) << 16) |
+                       (static_cast<uint32_t>(header[at + 3]) << 24);
+            };
+
+            const uint32_t dataOffset = u32(10);
+            const uint32_t width = u32(18);
+            const int32_t signedHeight = static_cast<int32_t>(u32(22));
+            const uint32_t height = static_cast<uint32_t>(std::abs(signedHeight));
+            const uint32_t bpp =
+                static_cast<uint32_t>(header[28]) | (static_cast<uint32_t>(header[29]) << 8);
+            const uint32_t compression = u32(30);
+
+            if (width > 0 && height > 0 && (bpp == 24 || bpp == 32) && compression == 0 &&
+                std::fseek(file, static_cast<long>(dataOffset), SEEK_SET) == 0) {
+                const uint32_t bytesPerPixel = bpp / 8u;
+                const uint32_t rowBytes = ((width * bytesPerPixel) + 3u) & ~3u;
+                std::vector<uint8_t> row(rowBytes);
+
+                out.width = width;
+                out.height = height;
+                out.pixels.assign(static_cast<size_t>(width) * height, Rgba{0, 0, 0, 255});
+
+                ok = true;
+                for (uint32_t i = 0; i < height && ok; ++i) {
+                    // A positive height means the rows are stored bottom-up.
+                    const uint32_t y = signedHeight > 0 ? (height - 1u - i) : i;
+                    ok = std::fread(row.data(), 1, rowBytes, file) == rowBytes;
+                    for (uint32_t x = 0; x < width && ok; ++x) {
+                        Rgba& pixel = out.pixels[static_cast<size_t>(y) * width + x];
+                        pixel.b = row[x * bytesPerPixel + 0];
+                        pixel.g = row[x * bytesPerPixel + 1];
+                        pixel.r = row[x * bytesPerPixel + 2];
+                        pixel.a = 255;
+                    }
+                }
+            }
+        }
+        std::fclose(file);
+    }
+
+    if (!ok) {
+        std::printf("Could not read '%s' as a 24/32-bit uncompressed BMP.\n", path);
+    }
+    return ok;
+}
+
 bool WriteBmp(const char* path, const Image& image, Rgba background) {
     std::FILE* file = nullptr;
     if (fopen_s(&file, path, "wb") != 0 || file == nullptr) {
@@ -475,6 +537,9 @@ void TestDisabledModulesAreFree(Harness& harness) {
         {"lensSoftness",
          [](AppSettings& s) { s.filters.lensSoftness.intensity = 1.0f;
                               s.filters.lensSoftness.center = 0.0f; }},
+        {"sharpen",
+         [](AppSettings& s) { s.filters.sharpen.intensity = 1.0f;
+                              s.filters.sharpen.radius = 1.0f; }},
         {"lensDirt",
          [](AppSettings& s) { s.filters.lensDirt.intensity = 1.0f; s.filters.lensDirt.density = 1.0f; }},
         {"glitch",
@@ -759,6 +824,55 @@ void TestBloomDoesNotLeakIntoLetterbox(Harness& harness) {
     CHECK(CountDifferences(plain, rendered) > 1000);
 }
 
+// A flat field has no detail, so an unsharp mask has nothing to sharpen and must be a no-op -
+// everywhere, the last row of picture before the letterbox bar included. That edge is the whole
+// point of the check: four of the five taps still land on the picture there but the fifth does
+// not, and a mean taken without weighting by coverage would read that missing tap as black,
+// push the high-pass positive and draw a bright rim around the content (ADR-0013, ADR-0011).
+void TestSharpenDoesNotRimTheContentEdge(Harness& harness) {
+    Image source;
+    source.width = 128;
+    source.height = 64;
+    source.pixels.assign(static_cast<size_t>(source.width) * source.height,
+                         Rgba{128, 128, 128, 255});
+    constexpr uint32_t kOut = 400;
+
+    AppSettings settings;
+    settings.filters.sharpen.enabled = true;
+    settings.filters.sharpen.intensity = 1.0f;
+    settings.filters.sharpen.radius = 1.0f;
+
+    const Image rendered = harness.Render(settings, source, kOut, kOut);
+    const Image plain = harness.Render(AppSettings{}, source, kOut, kOut);
+    if (rendered.pixels.empty() || plain.pixels.empty()) {
+        CHECK(false);
+        return;
+    }
+
+    int worst = 0;
+    for (size_t i = 0; i < rendered.pixels.size(); ++i) {
+        const Rgba& a = rendered.pixels[i];
+        const Rgba& b = plain.pixels[i];
+        worst = std::max(worst, std::abs(static_cast<int>(a.r) - static_cast<int>(b.r)));
+        worst = std::max(worst, std::abs(static_cast<int>(a.g) - static_cast<int>(b.g)));
+        worst = std::max(worst, std::abs(static_cast<int>(a.b) - static_cast<int>(b.b)));
+    }
+
+    // A couple of levels of tolerance for bilinear sampling, not the tens of levels a rim
+    // would be worth.
+    if (worst > 2) {
+        std::printf("FAIL: sharpen altered a flat field by %d level(s); expected a no-op.\n",
+                    worst);
+        ++g_failures;
+    }
+
+    // And it does do something when there is detail to work on, so the check above is not
+    // passing because the stage never ran.
+    const Image edged = harness.Render(settings, MakeEdgeSource(128, 64, 0.5f), kOut, kOut);
+    const Image edgedPlain = harness.Render(AppSettings{}, MakeEdgeSource(128, 64, 0.5f), kOut, kOut);
+    CHECK(CountDifferences(edgedPlain, edged) > 100);
+}
+
 // --- Sample renderer ------------------------------------------------------------------------
 //
 // Not a test: a diagnostic mode that writes what the shader actually produces to disk, so a
@@ -860,6 +974,51 @@ int WritePresetSamples(Harness& harness, const char* directory, int count, char*
     return written > 0 ? 0 : 1;
 }
 
+
+// The same idea as WritePresetSamples, but over a supplied frame and at that frame's own aspect
+// ratio - which matters for anything whose shape is measured against the corners, the scope
+// aperture above all. Output is named after the preset so a directory of these can be compared
+// against the footage they are imitating.
+int WritePresetSamplesFromImage(Harness& harness, const char* sourcePath, const char* directory,
+                                int count, char** names) {
+    Image source;
+    if (!ReadBmp(sourcePath, source)) {
+        return 1;
+    }
+
+    const Rgba background{40, 40, 44, 255};
+    const std::vector<Preset> presets = BuiltInPresets();
+    int written = 0;
+
+    for (int i = 0; i < count; ++i) {
+        const Preset* found = nullptr;
+        for (const Preset& candidate : presets) {
+            if (candidate.name == names[i]) {
+                found = &candidate;
+                break;
+            }
+        }
+        if (found == nullptr) {
+            std::printf("No built-in preset named '%s'\n", names[i]);
+            continue;
+        }
+
+        AppSettings settings;
+        settings.filters = found->filters;
+        settings.effects = found->effects;
+
+        char path[512];
+        std::snprintf(path, sizeof(path), "%s\\%s.bmp", directory, names[i]);
+        if (WriteBmp(path, harness.Render(settings, source, source.width, source.height, 2.5f),
+                     background)) {
+            ++written;
+        }
+    }
+
+    std::printf("Wrote %d preset sample(s) to %s\n", written, directory);
+    return written > 0 ? 0 : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -881,6 +1040,15 @@ int main(int argc, char** argv) {
         return WritePresetSamples(renderer, argv[2], argc - 3, argv + 3);
     }
 
+    if (argc >= 5 && std::strcmp(argv[1], "--write-presets-from") == 0) {
+        Harness renderer;
+        if (!renderer.Create()) {
+            std::printf("Direct3D 11 unavailable; no samples written.\n");
+            return 1;
+        }
+        return WritePresetSamplesFromImage(renderer, argv[2], argv[3], argc - 4, argv + 4);
+    }
+
     Harness harness;
     if (!harness.Create()) {
         // Not a failure: without a Direct3D 11 device there is nothing to measure, and the
@@ -895,6 +1063,7 @@ int main(int argc, char** argv) {
     TestDistortionMovesTheImage(harness);
     TestDistortionNeverOpensAHole(harness);
     TestBloomDoesNotLeakIntoLetterbox(harness);
+    TestSharpenDoesNotRimTheContentEdge(harness);
 
     if (g_failures == 0) {
         std::printf("All shader pipeline tests passed.\n");

@@ -237,6 +237,17 @@ struct LensSoftnessSettings : FilterBase {
     LensSoftnessSettings() { intensity = 0.40f; }
 };
 
+// The crunch an action camera puts on its own footage. A small sensor behind a very wide lens
+// resolves badly and every one of these cameras answers that with an aggressive unsharp mask in
+// the ISP, hard enough that the halo around a high-contrast edge is visible. That halo is as
+// much a signature of the format as the barrel is, and it is not something the tonal controls
+// can reach: sharpening is a spatial derivative added back, not a curve (ADR-0013).
+struct SharpenSettings : FilterBase {
+    float radius = 0.35f;  // tap distance, as a fraction of the frame
+
+    SharpenSettings() { intensity = 0.35f; }
+};
+
 struct FilterSettings {
     DistortionSettings distortion;
     VignetteSettings vignette;
@@ -249,6 +260,7 @@ struct FilterSettings {
     EdgeGlowSettings edgeGlow;
     LensDirtSettings lensDirt;
     LensSoftnessSettings lensSoftness;
+    SharpenSettings sharpen;
 };
 
 // --- Effects --------------------------------------------------------------------------
